@@ -11,6 +11,7 @@ import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent } from "@/components/ui/card"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { Footer } from "@/components/footer"
 import Link from "next/link"
 
 // Mock data for components
@@ -305,7 +306,7 @@ export default function ComponentVault() {
                   />
                   <Button 
                     size="lg" 
-                    className="absolute right-2 top-1/2 -translate-y-1/2 bg-gradient-to-r from-amber-500 to-yellow-500 hover:from-amber-600 hover:to-yellow-600 text-white font-semibold px-6 shadow-lg shadow-amber-500/30 transition-all duration-300 hover:shadow-xl hover:shadow-amber-500/40"
+                    className="absolute right-2 top-1/2 -translate-y-1/2 bg-gradient-to-r from-amber-500 to-yellow-500 hover:from-amber-600 hover:to-yellow-600 text-white font-semibold px-6 shadow-lg transition-all duration-300"
                   >
                     <Sparkles className="h-5 w-5 mr-2" />
                     Search
@@ -400,7 +401,7 @@ export default function ComponentVault() {
         <div className="mx-auto max-w-7xl">
           {/* Luxury Section Header */}
           <div className="text-center mb-16 animate-in fade-in slide-in-from-bottom-4 duration-700">
-            <Badge className="mb-4 bg-gradient-to-r from-purple-400 via-pink-400 to-purple-400 text-white dark:from-purple-500 dark:via-pink-500 dark:to-purple-500 dark:text-white border-0 px-6 py-2 shadow-lg shadow-purple-500/30">
+            <Badge className="mb-4 bg-gradient-to-r from-green-400 via-blue-400 to-cyan-400 text-white dark:from-green-500 dark:via-blue-500 dark:to-cyan-500 dark:text-white border-0 px-6 py-2 shadow-lg shadow-cyan-500/30">
               <Sparkles className="inline h-3 w-3 mr-1" />
               Why ComponentVault
             </Badge>
@@ -668,6 +669,9 @@ export default function ComponentVault() {
           </div>
         </div>
       </section>
+      
+      {/* Footer - Only on landing page */}
+      <Footer />
     </div>
   )
 }

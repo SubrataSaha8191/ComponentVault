@@ -32,6 +32,17 @@ import {
   ChevronRight,
   Check,
   AlertCircle,
+  Sparkles,
+  Activity,
+  Zap,
+  MessageSquare,
+  ThumbsUp,
+  Share2,
+  Bell,
+  Calendar,
+  Award,
+  Filter,
+  Search,
 } from "lucide-react"
 import {
   LineChart,
@@ -135,32 +146,55 @@ export default function DashboardPage() {
   const [activeTab, setActiveTab] = useState("my-components")
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background via-background to-primary/5">
-      <div className="container mx-auto px-4 py-8">
-        <div className="mb-8">
-          <h1 className="text-4xl font-bold mb-2 bg-gradient-to-r from-primary via-blue-500 to-emerald-500 bg-clip-text text-transparent">
+    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-black">
+      {/* Premium Background Effects */}
+      <div className="absolute inset-0 bg-[url('/abstract-geometric-pattern.png')] opacity-5 pointer-events-none" />
+      <div className="absolute top-20 left-10 w-96 h-96 bg-gradient-to-br from-amber-400/10 to-yellow-300/5 rounded-full blur-3xl animate-float pointer-events-none" />
+      <div className="absolute bottom-20 right-10 w-[500px] h-[500px] bg-gradient-to-tl from-purple-400/10 to-blue-300/5 rounded-full blur-3xl animate-float pointer-events-none" style={{ animationDelay: "1s" }} />
+      
+      <div className="container relative mx-auto px-4 py-8">
+        <div className="mb-12">
+          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r from-amber-500/20 to-yellow-500/20 backdrop-blur-sm border border-amber-400/30 mb-6 shadow-lg shadow-amber-500/10">
+            <Sparkles className="h-4 w-4 text-amber-300 animate-pulse" />
+            <span className="text-sm font-semibold bg-gradient-to-r from-amber-200 via-yellow-100 to-amber-200 bg-clip-text text-transparent">
+              Welcome back!
+            </span>
+          </div>
+          <h1 className="text-5xl font-bold mb-3 bg-gradient-to-r from-gray-100 via-white to-gray-100 bg-clip-text text-transparent">
             Dashboard
           </h1>
-          <p className="text-muted-foreground">Manage your components and track performance</p>
+          <p className="text-gray-400 text-lg">Manage your components and track performance</p>
         </div>
 
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="grid w-full grid-cols-4 lg:w-auto lg:inline-grid">
-            <TabsTrigger value="my-components" className="gap-2">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-8">
+          <TabsList className="grid w-full grid-cols-4 lg:w-auto lg:inline-grid bg-slate-800/50 backdrop-blur-sm border border-amber-400/20 p-1.5">
+            <TabsTrigger 
+              value="my-components" 
+              className="gap-2 data-[state=active]:bg-gradient-to-r data-[state=active]:from-amber-500 data-[state=active]:to-yellow-500 data-[state=active]:text-black data-[state=active]:shadow-lg data-[state=active]:shadow-amber-500/30"
+            >
               <LayoutGrid className="h-4 w-4" />
-              <span className="hidden sm:inline">My Components</span>
+              <span className="hidden sm:inline font-semibold">My Components</span>
             </TabsTrigger>
-            <TabsTrigger value="favorites" className="gap-2">
+            <TabsTrigger 
+              value="favorites" 
+              className="gap-2 data-[state=active]:bg-gradient-to-r data-[state=active]:from-amber-500 data-[state=active]:to-yellow-500 data-[state=active]:text-black data-[state=active]:shadow-lg data-[state=active]:shadow-amber-500/30"
+            >
               <Heart className="h-4 w-4" />
-              <span className="hidden sm:inline">Favorites</span>
+              <span className="hidden sm:inline font-semibold">Favorites</span>
             </TabsTrigger>
-            <TabsTrigger value="submissions" className="gap-2">
+            <TabsTrigger 
+              value="submissions" 
+              className="gap-2 data-[state=active]:bg-gradient-to-r data-[state=active]:from-amber-500 data-[state=active]:to-yellow-500 data-[state=active]:text-black data-[state=active]:shadow-lg data-[state=active]:shadow-amber-500/30"
+            >
               <Upload className="h-4 w-4" />
-              <span className="hidden sm:inline">Submit</span>
+              <span className="hidden sm:inline font-semibold">Submit</span>
             </TabsTrigger>
-            <TabsTrigger value="analytics" className="gap-2">
+            <TabsTrigger 
+              value="analytics" 
+              className="gap-2 data-[state=active]:bg-gradient-to-r data-[state=active]:from-amber-500 data-[state=active]:to-yellow-500 data-[state=active]:text-black data-[state=active]:shadow-lg data-[state=active]:shadow-amber-500/30"
+            >
               <BarChart3 className="h-4 w-4" />
-              <span className="hidden sm:inline">Analytics</span>
+              <span className="hidden sm:inline font-semibold">Analytics</span>
             </TabsTrigger>
           </TabsList>
 
@@ -170,22 +204,25 @@ export default function DashboardPage() {
               {myComponents.map((component) => (
                 <Card
                   key={component.id}
-                  className="group hover:shadow-lg transition-all duration-300 border-2 hover:border-primary/50"
+                  className="group relative overflow-hidden bg-slate-900/50 backdrop-blur-sm border-2 border-slate-700/50 hover:border-amber-400/50 transition-all duration-500 hover:shadow-2xl hover:shadow-amber-500/20 hover:-translate-y-2"
                 >
-                  <CardHeader className="pb-3">
-                    <div className="aspect-video relative rounded-lg overflow-hidden mb-3 bg-muted">
+                  {/* Gradient Glow Effect */}
+                  <div className="absolute -top-12 -right-12 w-48 h-48 bg-gradient-to-br from-amber-400/20 to-yellow-300/10 opacity-0 group-hover:opacity-100 rounded-full blur-3xl transition-opacity duration-700" />
+                  
+                  <CardHeader className="pb-3 relative z-10">
+                    <div className="aspect-video relative rounded-lg overflow-hidden mb-3 bg-slate-800/50 ring-1 ring-amber-400/20">
                       <img
                         src={component.thumbnail || "/placeholder.svg"}
                         alt={component.name}
-                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                        className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
                       />
                       <Badge
-                        className={`absolute top-2 right-2 ${
+                        className={`absolute top-2 right-2 shadow-lg ${
                           component.status === "approved"
-                            ? "bg-emerald-500"
+                            ? "bg-emerald-500 hover:bg-emerald-600"
                             : component.status === "pending"
-                              ? "bg-yellow-500"
-                              : "bg-red-500"
+                              ? "bg-yellow-500 hover:bg-yellow-600"
+                              : "bg-red-500 hover:bg-red-600"
                         }`}
                       >
                         {component.status === "approved" && <CheckCircle2 className="h-3 w-3 mr-1" />}
@@ -194,40 +231,40 @@ export default function DashboardPage() {
                         {component.status.charAt(0).toUpperCase() + component.status.slice(1)}
                       </Badge>
                     </div>
-                    <CardTitle className="text-lg">{component.name}</CardTitle>
-                    <CardDescription>{component.category}</CardDescription>
+                    <CardTitle className="text-lg text-white">{component.name}</CardTitle>
+                    <CardDescription className="text-gray-400">{component.category}</CardDescription>
                   </CardHeader>
-                  <CardContent className="space-y-4">
+                  <CardContent className="space-y-4 relative z-10">
                     <div className="grid grid-cols-3 gap-2 text-sm">
-                      <div className="flex items-center gap-1 text-muted-foreground">
+                      <div className="flex items-center gap-1 text-gray-400">
                         <Eye className="h-4 w-4" />
                         <span>{component.views}</span>
                       </div>
-                      <div className="flex items-center gap-1 text-muted-foreground">
+                      <div className="flex items-center gap-1 text-gray-400">
                         <Download className="h-4 w-4" />
                         <span>{component.downloads}</span>
                       </div>
-                      <div className="flex items-center gap-1 text-muted-foreground">
+                      <div className="flex items-center gap-1 text-gray-400">
                         <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
                         <span>{component.rating || "N/A"}</span>
                       </div>
                     </div>
                     <div className="flex gap-2">
                       {component.frameworks.map((fw) => (
-                        <Badge key={fw} variant="secondary" className="text-xs">
+                        <Badge key={fw} variant="secondary" className="text-xs bg-slate-800 text-gray-300 border-slate-700">
                           {fw}
                         </Badge>
                       ))}
                     </div>
                     <div className="flex gap-2">
-                      <Button size="sm" variant="outline" className="flex-1 bg-transparent">
+                      <Button size="sm" variant="outline" className="flex-1 bg-slate-800/50 border-slate-700 text-gray-300 hover:bg-amber-500 hover:text-black hover:border-amber-400 transition-all">
                         <Edit className="h-4 w-4 mr-1" />
                         Edit
                       </Button>
                       <Button
                         size="sm"
                         variant="outline"
-                        className="flex-1 text-red-500 hover:text-red-600 bg-transparent"
+                        className="flex-1 bg-slate-800/50 border-slate-700 text-red-400 hover:bg-red-500 hover:text-white hover:border-red-400 transition-all"
                       >
                         <Trash2 className="h-4 w-4 mr-1" />
                         Delete
@@ -242,8 +279,8 @@ export default function DashboardPage() {
           {/* Favorites Tab */}
           <TabsContent value="favorites" className="space-y-6">
             <div className="flex justify-between items-center">
-              <h2 className="text-2xl font-semibold">Saved Components</h2>
-              <Button variant="outline" className="gap-2 bg-transparent">
+              <h2 className="text-3xl font-bold bg-gradient-to-r from-amber-200 via-yellow-100 to-amber-200 bg-clip-text text-transparent">Saved Components</h2>
+              <Button variant="outline" className="gap-2 bg-slate-800/50 border-amber-400/30 text-amber-300 hover:bg-amber-500 hover:text-black hover:border-amber-400 transition-all shadow-lg shadow-amber-500/10">
                 <FolderPlus className="h-4 w-4" />
                 New Collection
               </Button>
@@ -252,35 +289,38 @@ export default function DashboardPage() {
               {favoriteComponents.map((component) => (
                 <Card
                   key={component.id}
-                  className="group hover:shadow-lg transition-all duration-300 border-2 hover:border-primary/50"
+                  className="group relative overflow-hidden bg-slate-900/50 backdrop-blur-sm border-2 border-slate-700/50 hover:border-amber-400/50 transition-all duration-500 hover:shadow-2xl hover:shadow-amber-500/20 hover:-translate-y-2"
                 >
-                  <CardHeader className="pb-3">
-                    <div className="aspect-video relative rounded-lg overflow-hidden mb-3 bg-muted">
+                  {/* Gradient Glow Effect */}
+                  <div className="absolute -top-12 -right-12 w-48 h-48 bg-gradient-to-br from-purple-400/20 to-blue-300/10 opacity-0 group-hover:opacity-100 rounded-full blur-3xl transition-opacity duration-700" />
+                  
+                  <CardHeader className="pb-3 relative z-10">
+                    <div className="aspect-video relative rounded-lg overflow-hidden mb-3 bg-slate-800/50 ring-1 ring-amber-400/20">
                       <img
                         src={component.thumbnail || "/placeholder.svg"}
                         alt={component.name}
-                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                        className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
                       />
-                      <Button size="icon" variant="secondary" className="absolute top-2 right-2 h-8 w-8">
+                      <Button size="icon" variant="secondary" className="absolute top-2 right-2 h-8 w-8 bg-slate-900/80 backdrop-blur-sm hover:bg-slate-900">
                         <Heart className="h-4 w-4 fill-red-500 text-red-500" />
                       </Button>
                     </div>
-                    <CardTitle className="text-lg">{component.name}</CardTitle>
-                    <CardDescription>by {component.author}</CardDescription>
+                    <CardTitle className="text-lg text-white">{component.name}</CardTitle>
+                    <CardDescription className="text-gray-400">by {component.author}</CardDescription>
                   </CardHeader>
-                  <CardContent className="space-y-4">
+                  <CardContent className="space-y-4 relative z-10">
                     <div className="flex items-center justify-between text-sm">
-                      <div className="flex items-center gap-1 text-muted-foreground">
+                      <div className="flex items-center gap-1 text-gray-400">
                         <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
                         <span>{component.rating}</span>
                       </div>
-                      <div className="flex items-center gap-1 text-muted-foreground">
+                      <div className="flex items-center gap-1 text-gray-400">
                         <Download className="h-4 w-4" />
                         <span>{component.downloads}</span>
                       </div>
                     </div>
-                    <Badge variant="outline">{component.collection}</Badge>
-                    <Button className="w-full bg-transparent" variant="outline">
+                    <Badge variant="outline" className="bg-slate-800 text-amber-300 border-amber-400/30">{component.collection}</Badge>
+                    <Button className="w-full bg-gradient-to-r from-amber-500 to-yellow-500 hover:from-amber-600 hover:to-yellow-600 text-black font-semibold shadow-lg shadow-amber-500/30" variant="default">
                       View Component
                     </Button>
                   </CardContent>
@@ -297,49 +337,53 @@ export default function DashboardPage() {
           {/* Analytics Tab */}
           <TabsContent value="analytics" className="space-y-6">
             <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
-              <Card>
-                <CardHeader className="pb-3">
-                  <CardDescription>Total Views</CardDescription>
-                  <CardTitle className="text-3xl">4,800</CardTitle>
+              <Card className="relative overflow-hidden bg-slate-900/50 backdrop-blur-sm border-2 border-slate-700/50 hover:border-amber-400/30 transition-all duration-300">
+                <div className="absolute -top-8 -right-8 w-32 h-32 bg-gradient-to-br from-amber-400/20 to-yellow-300/10 rounded-full blur-2xl" />
+                <CardHeader className="pb-3 relative z-10">
+                  <CardDescription className="text-gray-400">Total Views</CardDescription>
+                  <CardTitle className="text-4xl bg-gradient-to-r from-amber-200 via-yellow-100 to-amber-200 bg-clip-text text-transparent">4,800</CardTitle>
                 </CardHeader>
-                <CardContent>
-                  <div className="flex items-center text-sm text-emerald-500">
+                <CardContent className="relative z-10">
+                  <div className="flex items-center text-sm text-emerald-400">
                     <TrendingUp className="h-4 w-4 mr-1" />
                     <span>+12.5% from last month</span>
                   </div>
                 </CardContent>
               </Card>
-              <Card>
-                <CardHeader className="pb-3">
-                  <CardDescription>Total Downloads</CardDescription>
-                  <CardTitle className="text-3xl">2,311</CardTitle>
+              <Card className="relative overflow-hidden bg-slate-900/50 backdrop-blur-sm border-2 border-slate-700/50 hover:border-purple-400/30 transition-all duration-300">
+                <div className="absolute -top-8 -right-8 w-32 h-32 bg-gradient-to-br from-purple-400/20 to-blue-300/10 rounded-full blur-2xl" />
+                <CardHeader className="pb-3 relative z-10">
+                  <CardDescription className="text-gray-400">Total Downloads</CardDescription>
+                  <CardTitle className="text-4xl text-white">2,311</CardTitle>
                 </CardHeader>
-                <CardContent>
-                  <div className="flex items-center text-sm text-emerald-500">
+                <CardContent className="relative z-10">
+                  <div className="flex items-center text-sm text-emerald-400">
                     <TrendingUp className="h-4 w-4 mr-1" />
                     <span>+8.2% from last month</span>
                   </div>
                 </CardContent>
               </Card>
-              <Card>
-                <CardHeader className="pb-3">
-                  <CardDescription>Avg Rating</CardDescription>
-                  <CardTitle className="text-3xl">4.8</CardTitle>
+              <Card className="relative overflow-hidden bg-slate-900/50 backdrop-blur-sm border-2 border-slate-700/50 hover:border-yellow-400/30 transition-all duration-300">
+                <div className="absolute -top-8 -right-8 w-32 h-32 bg-gradient-to-br from-yellow-400/20 to-amber-300/10 rounded-full blur-2xl" />
+                <CardHeader className="pb-3 relative z-10">
+                  <CardDescription className="text-gray-400">Avg Rating</CardDescription>
+                  <CardTitle className="text-4xl text-white">4.8</CardTitle>
                 </CardHeader>
-                <CardContent>
-                  <div className="flex items-center text-sm text-muted-foreground">
+                <CardContent className="relative z-10">
+                  <div className="flex items-center text-sm text-gray-400">
                     <Star className="h-4 w-4 mr-1 fill-yellow-400 text-yellow-400" />
                     <span>Based on 156 reviews</span>
                   </div>
                 </CardContent>
               </Card>
-              <Card>
-                <CardHeader className="pb-3">
-                  <CardDescription>Active Users</CardDescription>
-                  <CardTitle className="text-3xl">892</CardTitle>
+              <Card className="relative overflow-hidden bg-slate-900/50 backdrop-blur-sm border-2 border-slate-700/50 hover:border-emerald-400/30 transition-all duration-300">
+                <div className="absolute -top-8 -right-8 w-32 h-32 bg-gradient-to-br from-emerald-400/20 to-green-300/10 rounded-full blur-2xl" />
+                <CardHeader className="pb-3 relative z-10">
+                  <CardDescription className="text-gray-400">Active Users</CardDescription>
+                  <CardTitle className="text-4xl text-white">892</CardTitle>
                 </CardHeader>
-                <CardContent>
-                  <div className="flex items-center text-sm text-emerald-500">
+                <CardContent className="relative z-10">
+                  <div className="flex items-center text-sm text-emerald-400">
                     <Users className="h-4 w-4 mr-1" />
                     <span>+15.3% from last month</span>
                   </div>
@@ -348,10 +392,10 @@ export default function DashboardPage() {
             </div>
 
             <div className="grid gap-6 lg:grid-cols-2">
-              <Card>
+              <Card className="bg-slate-900/50 backdrop-blur-sm border-2 border-slate-700/50">
                 <CardHeader>
-                  <CardTitle>Performance Overview</CardTitle>
-                  <CardDescription>Views and downloads over time</CardDescription>
+                  <CardTitle className="text-white">Performance Overview</CardTitle>
+                  <CardDescription className="text-gray-400">Views and downloads over time</CardDescription>
                 </CardHeader>
                 <CardContent>
                   <ResponsiveContainer width="100%" height={300}>
@@ -374,10 +418,10 @@ export default function DashboardPage() {
                 </CardContent>
               </Card>
 
-              <Card>
+              <Card className="bg-slate-900/50 backdrop-blur-sm border-2 border-slate-700/50">
                 <CardHeader>
-                  <CardTitle>Category Distribution</CardTitle>
-                  <CardDescription>Components by category</CardDescription>
+                  <CardTitle className="text-white">Category Distribution</CardTitle>
+                  <CardDescription className="text-gray-400">Components by category</CardDescription>
                 </CardHeader>
                 <CardContent>
                   <ResponsiveContainer width="100%" height={300}>
@@ -387,7 +431,7 @@ export default function DashboardPage() {
                         cx="50%"
                         cy="50%"
                         labelLine={false}
-                        label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                        label={({ name, percent }: any) => `${name} ${(percent * 100).toFixed(0)}%`}
                         outerRadius={80}
                         fill="#8884d8"
                         dataKey="value"
@@ -403,10 +447,10 @@ export default function DashboardPage() {
               </Card>
             </div>
 
-            <Card>
+            <Card className="bg-slate-900/50 backdrop-blur-sm border-2 border-slate-700/50">
               <CardHeader>
-                <CardTitle>Top Performing Components</CardTitle>
-                <CardDescription>Most downloaded components this month</CardDescription>
+                <CardTitle className="text-white">Top Performing Components</CardTitle>
+                <CardDescription className="text-gray-400">Most downloaded components this month</CardDescription>
               </CardHeader>
               <CardContent>
                 <ResponsiveContainer width="100%" height={300}>
@@ -481,26 +525,27 @@ function SubmissionForm() {
 
   if (showSuccess) {
     return (
-      <Card className="max-w-2xl mx-auto">
+      <Card className="max-w-2xl mx-auto bg-slate-900/50 backdrop-blur-sm border-2 border-slate-700/50">
         <CardContent className="pt-6 text-center space-y-6">
-          <div className="w-16 h-16 bg-emerald-500/10 rounded-full flex items-center justify-center mx-auto">
-            <CheckCircle2 className="h-8 w-8 text-emerald-500" />
+          <div className="w-16 h-16 bg-emerald-500/20 rounded-full flex items-center justify-center mx-auto ring-4 ring-emerald-500/20">
+            <CheckCircle2 className="h-8 w-8 text-emerald-400" />
           </div>
           <div>
-            <h2 className="text-2xl font-bold mb-2">Component Submitted Successfully!</h2>
-            <p className="text-muted-foreground">
+            <h2 className="text-3xl font-bold mb-2 bg-gradient-to-r from-emerald-200 to-green-100 bg-clip-text text-transparent">Component Submitted Successfully!</h2>
+            <p className="text-gray-400">
               Your component is now under review. You'll be notified once it's approved.
             </p>
           </div>
-          <div className="bg-muted p-4 rounded-lg">
-            <p className="text-sm font-medium mb-2">Shareable Link:</p>
+          <div className="bg-slate-800/50 p-4 rounded-lg border border-slate-700">
+            <p className="text-sm font-medium mb-2 text-gray-300">Shareable Link:</p>
             <div className="flex gap-2">
-              <Input value="https://componentvault.com/component/abc123" readOnly className="font-mono text-sm" />
-              <Button>Copy</Button>
+              <Input value="https://componentvault.com/component/abc123" readOnly className="font-mono text-sm bg-slate-900 border-slate-700 text-gray-300" />
+              <Button className="bg-gradient-to-r from-amber-500 to-yellow-500 hover:from-amber-600 hover:to-yellow-600 text-black font-semibold">Copy</Button>
             </div>
           </div>
           <div className="flex gap-3 justify-center">
             <Button
+              className="bg-gradient-to-r from-amber-500 to-yellow-500 hover:from-amber-600 hover:to-yellow-600 text-black font-semibold shadow-lg shadow-amber-500/30"
               onClick={() => {
                 setShowSuccess(false)
                 setStep(1)
@@ -518,7 +563,7 @@ function SubmissionForm() {
             >
               Submit Another
             </Button>
-            <Button variant="outline" onClick={() => (window.location.href = "/dashboard")}>
+            <Button variant="outline" className="bg-slate-800/50 border-slate-700 text-gray-300 hover:bg-slate-800" onClick={() => (window.location.href = "/dashboard")}>
               Go to Dashboard
             </Button>
           </div>
@@ -529,15 +574,15 @@ function SubmissionForm() {
 
   return (
     <div className="max-w-4xl mx-auto space-y-6">
-      <Card>
+      <Card className="bg-slate-900/50 backdrop-blur-sm border-2 border-slate-700/50">
         <CardHeader>
           <div className="flex items-center justify-between mb-4">
-            <CardTitle>Submit New Component</CardTitle>
-            <span className="text-sm text-muted-foreground">
+            <CardTitle className="text-2xl bg-gradient-to-r from-amber-200 via-yellow-100 to-amber-200 bg-clip-text text-transparent">Submit New Component</CardTitle>
+            <span className="text-sm text-gray-400">
               Step {step} of {totalSteps}
             </span>
           </div>
-          <Progress value={progress} className="h-2" />
+          <Progress value={progress} className="h-3 bg-slate-800" />
         </CardHeader>
         <CardContent className="space-y-6">
           {/* Step 1: Basic Information */}

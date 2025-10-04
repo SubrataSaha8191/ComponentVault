@@ -7,7 +7,6 @@ import { Analytics } from "@vercel/analytics/react"
 import { Suspense } from "react"
 import { ThemeProvider } from "@/components/theme-provider"
 import { Header } from "@/components/header"
-import { Footer } from "@/components/footer"
 import "./globals.css"
 
 const inter = Inter({
@@ -43,7 +42,6 @@ export default function RootLayout({
           <Suspense fallback={<div className="flex items-center justify-center min-h-screen">Loading...</div>}>
             <Header />
             {children}
-            <Footer />
             <Analytics />
           </Suspense>
         </ThemeProvider>
