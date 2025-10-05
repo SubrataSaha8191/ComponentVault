@@ -6,6 +6,7 @@ import { Fira_Code } from "next/font/google"
 import { Analytics } from "@vercel/analytics/react"
 import { Suspense } from "react"
 import { ThemeProvider } from "@/components/theme-provider"
+import { AuthProvider } from "@/contexts/auth-context"
 import { Header } from "@/components/header"
 import "./globals.css"
 
@@ -39,11 +40,13 @@ export default function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
-          <Suspense fallback={<div className="flex items-center justify-center min-h-screen">Loading...</div>}>
-            <Header />
-            {children}
-            <Analytics />
-          </Suspense>
+          <AuthProvider>
+            <Suspense fallback={<div className="flex items-center justify-center min-h-screen">Loading...</div>}>
+              <Header />
+              {children}
+              <Analytics />
+            </Suspense>
+          </AuthProvider>
         </ThemeProvider>
       </body>
     </html>

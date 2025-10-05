@@ -1,0 +1,73 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Helper functions
+    function isSignedIn() {
+      return request.auth != null;
+    }
+    
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+    
+    function isAdmin() {
+      return isSignedIn() && 
+             exists(/databases/$(database)/documents/admins/$(request.auth.uid));
+    }
+
+    // Components collection
+    match /components/{componentId} {
+      // Anyone can read published components
+      allow read: if resource.data.isPublished == true || 
+                     isOwner(resource.data.authorId) || 
+                     isAdmin();
+      
+      // Only authenticated users can create components
+      allow create: if isSignedIn() && 
+                       request.resource.data.authorId == request.auth.uid;
+      
+      // Only owner or admin can update/delete
+      allow update, delete: if isOwner(resource.data.authorId) || isAdmin();
+    }
+
+    // Users collection
+    match /users/{userId} {
+      // Anyone can read public user data
+      allow read: if true;
+      
+      // Users can only create/update their own profile
+      allow create, update: if isOwner(userId);
+      
+      // Only admin can delete users
+      allow delete: if isAdmin();
+    }
+
+    // Collections
+    match /collections/{collectionId} {
+      // Anyone can read public collections
+      allow read: if resource.data.isPublic == true || 
+                     isOwner(resource.data.authorId) || 
+                     isAdmin();
+      
+      // Only authenticated users can create collections
+      allow create: if isSignedIn() && 
+                       request.resource.data.authorId == request.auth.uid;
+      
+      // Only owner or admin can update/delete
+      allow update, delete: if isOwner(resource.data.authorId) || isAdmin();
+    }
+
+    // Comments
+    match /comments/{commentId} {
+      allow read: if true;
+      allow create: if isSignedIn() && 
+                       request.resource.data.authorId == request.auth.uid;
+      allow update, delete: if isOwner(resource.data.authorId) || isAdmin();
+    }
+
+    // Admins collection (only admins can read/write)
+    match /admins/{adminId} {
+      allow read, write: if isAdmin();
+    }
+  }
+}

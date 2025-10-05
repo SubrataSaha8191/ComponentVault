@@ -2,7 +2,7 @@
 
 import { useState } from "react"
 import { useTheme } from "next-themes"
-import { Search, Menu, Moon, Sun, User, Settings, LogOut, Package, Sparkles, Zap, Crown } from "lucide-react"
+import { Search, Menu, Moon, Sun, User, Settings, LogOut, Package, Sparkles, Zap, Crown, LogIn } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
@@ -17,6 +17,8 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
 import { LogoutDialog } from "@/components/logout-dialog"
+import { AuthModal } from "@/components/auth-modal"
+import { useAuth } from "@/contexts/auth-context"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 
@@ -24,18 +26,43 @@ export function Header() {
   const [isSearchExpanded, setIsSearchExpanded] = useState(false)
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [logoutDialogOpen, setLogoutDialogOpen] = useState(false)
+  const [authModalOpen, setAuthModalOpen] = useState(false)
+  const [authModalTab, setAuthModalTab] = useState<'signin' | 'signup'>('signin')
   const { theme, setTheme } = useTheme()
+  const { user, loading, signOut } = useAuth()
   const pathname = usePathname()
 
   const toggleTheme = () => {
     setTheme(theme === "light" ? "dark" : "light")
   }
 
-  const handleLogout = () => {
-    // Add your logout logic here
-    console.log("User logged out")
-    // Redirect to home or login page
-    window.location.href = "/"
+  const handleAuthClick = (tab: 'signin' | 'signup') => {
+    setAuthModalTab(tab)
+    setAuthModalOpen(true)
+  }
+
+  const handleLogout = async () => {
+    try {
+      await signOut()
+      setLogoutDialogOpen(false)
+    } catch (error) {
+      console.error('Logout error:', error)
+    }
+  }
+
+  const getUserInitials = (user: any) => {
+    if (user?.displayName) {
+      return user.displayName.split(' ').map((name: string) => name[0]).join('').toUpperCase()
+    }
+    if (user?.email) {
+      return user.email[0].toUpperCase()
+    }
+    return 'U'
+  }
+
+  const getUserAvatar = (user: any) => {
+    // Priority: photoURL from OAuth providers, then default
+    return user?.photoURL || null
   }
 
   const navLinks = [
@@ -143,80 +170,105 @@ export function Header() {
               )}
             </Button>
 
-            {/* Enhanced User Menu */}
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" className="hidden sm:flex relative h-10 w-10 rounded-full hover:ring-4 hover:ring-purple-500/20 transition-all duration-300 group" aria-label="User menu">
-                  <Avatar className="h-10 w-10 ring-2 ring-purple-500/20 group-hover:ring-purple-500/50 transition-all duration-300">
-                    <AvatarImage src="/placeholder-user.jpg" alt="User" />
-                    <AvatarFallback className="bg-gradient-to-br from-purple-600 via-blue-600 to-purple-600 text-white text-sm font-semibold">
-                      AJ
-                    </AvatarFallback>
-                  </Avatar>
-                  <div className="absolute -top-1 -right-1">
-                    <span className="relative flex h-3 w-3">
-                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
-                      <span className="relative inline-flex rounded-full h-3 w-3 bg-green-500 border-2 border-background"></span>
-                    </span>
-                  </div>
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-72 animate-in fade-in slide-in-from-top-2 duration-200 border-purple-500/20 shadow-xl">
-                <DropdownMenuLabel className="font-normal p-4">
-                  <div className="flex items-center space-x-3">
-                    <Avatar className="h-12 w-12 ring-2 ring-purple-500/30">
-                      <AvatarImage src="/placeholder-user.jpg" alt="User" />
-                      <AvatarFallback className="bg-gradient-to-br from-purple-600 to-blue-600 text-white">
-                        AJ
+            {/* Authentication State */}
+            {loading ? (
+              <div className="w-10 h-10 rounded-full bg-gray-200 animate-pulse"></div>
+            ) : user ? (
+              /* Authenticated User Menu */
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" className="hidden sm:flex relative h-10 w-10 rounded-full hover:ring-4 hover:ring-purple-500/20 transition-all duration-300 group" aria-label="User menu">
+                    <Avatar className="h-10 w-10 ring-2 ring-purple-500/20 group-hover:ring-purple-500/50 transition-all duration-300">
+                      <AvatarImage src={getUserAvatar(user)} alt={user.displayName || user.email || 'User'} />
+                      <AvatarFallback className="bg-gradient-to-br from-purple-600 via-blue-600 to-purple-600 text-white text-sm font-semibold">
+                        {getUserInitials(user)}
                       </AvatarFallback>
                     </Avatar>
-                    <div className="flex-1 space-y-1">
-                      <p className="text-sm font-semibold leading-none">Alex Johnson</p>
-                      <p className="text-xs leading-none text-muted-foreground">alex@example.com</p>
-                      <Badge className="mt-1 bg-gradient-to-r from-purple-600 to-blue-600 text-white border-0 text-[10px] px-1.5 py-0">
-                        Pro Member
-                      </Badge>
+                    <div className="absolute -top-1 -right-1">
+                      <span className="relative flex h-3 w-3">
+                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+                        <span className="relative inline-flex rounded-full h-3 w-3 bg-green-500 border-2 border-background"></span>
+                      </span>
                     </div>
-                  </div>
-                </DropdownMenuLabel>
-                <DropdownMenuSeparator className="bg-purple-500/10" />
-                <Link href="/profile">
-                  <DropdownMenuItem className="cursor-pointer hover:bg-purple-50 dark:hover:bg-purple-950/20 transition-colors py-3 gap-3">
-                    <User className="h-4 w-4 text-purple-600" />
-                    <div className="flex-1">
-                      <span className="font-medium">Profile</span>
-                      <p className="text-xs text-muted-foreground">View and edit your profile</p>
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-72 animate-in fade-in slide-in-from-top-2 duration-200 border-purple-500/20 shadow-xl">
+                  <DropdownMenuLabel className="font-normal p-4">
+                    <div className="flex items-center space-x-3">
+                      <Avatar className="h-12 w-12 ring-2 ring-purple-500/30">
+                        <AvatarImage src={getUserAvatar(user)} alt={user.displayName || user.email || 'User'} />
+                        <AvatarFallback className="bg-gradient-to-br from-purple-600 to-blue-600 text-white">
+                          {getUserInitials(user)}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div className="flex-1 space-y-1">
+                        <p className="text-sm font-semibold leading-none">{user.displayName || 'Anonymous User'}</p>
+                        <p className="text-xs leading-none text-muted-foreground">{user.email}</p>
+                        {user.emailVerified && (
+                          <Badge className="mt-1 bg-gradient-to-r from-purple-600 to-blue-600 text-white border-0 text-[10px] px-1.5 py-0">
+                            Verified
+                          </Badge>
+                        )}
+                      </div>
                     </div>
+                  </DropdownMenuLabel>
+                  <DropdownMenuSeparator className="bg-purple-500/10" />
+                  <Link href="/profile">
+                    <DropdownMenuItem className="cursor-pointer hover:bg-purple-50 dark:hover:bg-purple-950/20 transition-colors py-3 gap-3">
+                      <User className="h-4 w-4 text-purple-600" />
+                      <div className="flex-1">
+                        <span className="font-medium">Profile</span>
+                        <p className="text-xs text-muted-foreground">View and edit your profile</p>
+                      </div>
+                    </DropdownMenuItem>
+                  </Link>
+                  <Link href="/my-components">
+                    <DropdownMenuItem className="cursor-pointer hover:bg-purple-50 dark:hover:bg-purple-950/20 transition-colors py-3 gap-3">
+                      <Package className="h-4 w-4 text-blue-600" />
+                      <div className="flex-1">
+                        <span className="font-medium">My Components</span>
+                        <p className="text-xs text-muted-foreground">Manage your uploads</p>
+                      </div>
+                    </DropdownMenuItem>
+                  </Link>
+                  <Link href="/settings">
+                    <DropdownMenuItem className="cursor-pointer hover:bg-purple-50 dark:hover:bg-purple-950/20 transition-colors py-3 gap-3">
+                      <Settings className="h-4 w-4 text-gray-600" />
+                      <div className="flex-1">
+                        <span className="font-medium">Settings</span>
+                        <p className="text-xs text-muted-foreground">Preferences and privacy</p>
+                      </div>
+                    </DropdownMenuItem>
+                  </Link>
+                  <DropdownMenuSeparator className="bg-purple-500/10" />
+                  <DropdownMenuItem 
+                    className="cursor-pointer text-red-600 focus:text-red-700 focus:bg-red-50 dark:focus:bg-red-950/20 transition-colors py-3 gap-3"
+                    onClick={() => setLogoutDialogOpen(true)}
+                  >
+                    <LogOut className="h-4 w-4" />
+                    <span className="font-medium">Log out</span>
                   </DropdownMenuItem>
-                </Link>
-                <Link href="/my-components">
-                  <DropdownMenuItem className="cursor-pointer hover:bg-purple-50 dark:hover:bg-purple-950/20 transition-colors py-3 gap-3">
-                    <Package className="h-4 w-4 text-blue-600" />
-                    <div className="flex-1">
-                      <span className="font-medium">My Components</span>
-                      <p className="text-xs text-muted-foreground">Manage your uploads</p>
-                    </div>
-                  </DropdownMenuItem>
-                </Link>
-                <Link href="/settings">
-                  <DropdownMenuItem className="cursor-pointer hover:bg-purple-50 dark:hover:bg-purple-950/20 transition-colors py-3 gap-3">
-                    <Settings className="h-4 w-4 text-gray-600" />
-                    <div className="flex-1">
-                      <span className="font-medium">Settings</span>
-                      <p className="text-xs text-muted-foreground">Preferences and privacy</p>
-                    </div>
-                  </DropdownMenuItem>
-                </Link>
-                <DropdownMenuSeparator className="bg-purple-500/10" />
-                <DropdownMenuItem 
-                  className="cursor-pointer text-red-600 focus:text-red-700 focus:bg-red-50 dark:focus:bg-red-950/20 transition-colors py-3 gap-3"
-                  onClick={() => setLogoutDialogOpen(true)}
+                </DropdownMenuContent>
+              </DropdownMenu>
+            ) : (
+              /* Unauthenticated State */
+              <div className="hidden sm:flex items-center gap-2">
+                <Button 
+                  variant="ghost" 
+                  onClick={() => handleAuthClick('signin')}
+                  className="text-gray-700 dark:text-gray-300 hover:text-purple-600 dark:hover:text-purple-400"
                 >
-                  <LogOut className="h-4 w-4" />
-                  <span className="font-medium">Log out</span>
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+                  <LogIn className="h-4 w-4 mr-2" />
+                  Sign In
+                </Button>
+                <Button 
+                  onClick={() => handleAuthClick('signup')}
+                  className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white"
+                >
+                  Get Started
+                </Button>
+              </div>
+            )}
 
             {/* Enhanced Mobile Menu */}
             <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
@@ -266,40 +318,67 @@ export function Header() {
                   </div>
 
                   <div className="border-t border-purple-500/10 pt-4 mt-4 space-y-2">
-                    <Link
-                      href="/profile"
-                      className="flex items-center gap-3 px-4 py-3 rounded-lg text-base font-medium hover:bg-purple-50 dark:hover:bg-purple-950/20 hover:text-purple-600 transition-all duration-300"
-                      onClick={() => setMobileMenuOpen(false)}
-                    >
-                      <User className="h-5 w-5" />
-                      Profile
-                    </Link>
-                    <Link
-                      href="/my-components"
-                      className="flex items-center gap-3 px-4 py-3 rounded-lg text-base font-medium hover:bg-purple-50 dark:hover:bg-purple-950/20 hover:text-purple-600 transition-all duration-300"
-                      onClick={() => setMobileMenuOpen(false)}
-                    >
-                      <Package className="h-5 w-5" />
-                      My Components
-                    </Link>
-                    <Link
-                      href="/settings"
-                      className="flex items-center gap-3 px-4 py-3 rounded-lg text-base font-medium hover:bg-purple-50 dark:hover:bg-purple-950/20 hover:text-purple-600 transition-all duration-300"
-                      onClick={() => setMobileMenuOpen(false)}
-                    >
-                      <Settings className="h-5 w-5" />
-                      Settings
-                    </Link>
-                    <button
-                      className="flex items-center gap-3 px-4 py-3 rounded-lg text-base font-medium hover:bg-red-50 dark:hover:bg-red-950/20 hover:text-red-600 transition-all duration-300 w-full text-left"
-                      onClick={() => {
-                        setMobileMenuOpen(false)
-                        setLogoutDialogOpen(true)
-                      }}
-                    >
-                      <LogOut className="h-5 w-5" />
-                      Log Out
-                    </button>
+                    {user ? (
+                      <>
+                        <Link
+                          href="/profile"
+                          className="flex items-center gap-3 px-4 py-3 rounded-lg text-base font-medium hover:bg-purple-50 dark:hover:bg-purple-950/20 hover:text-purple-600 transition-all duration-300"
+                          onClick={() => setMobileMenuOpen(false)}
+                        >
+                          <User className="h-5 w-5" />
+                          Profile
+                        </Link>
+                        <Link
+                          href="/my-components"
+                          className="flex items-center gap-3 px-4 py-3 rounded-lg text-base font-medium hover:bg-purple-50 dark:hover:bg-purple-950/20 hover:text-purple-600 transition-all duration-300"
+                          onClick={() => setMobileMenuOpen(false)}
+                        >
+                          <Package className="h-5 w-5" />
+                          My Components
+                        </Link>
+                        <Link
+                          href="/settings"
+                          className="flex items-center gap-3 px-4 py-3 rounded-lg text-base font-medium hover:bg-purple-50 dark:hover:bg-purple-950/20 hover:text-purple-600 transition-all duration-300"
+                          onClick={() => setMobileMenuOpen(false)}
+                        >
+                          <Settings className="h-5 w-5" />
+                          Settings
+                        </Link>
+                        <button
+                          className="flex items-center gap-3 px-4 py-3 rounded-lg text-base font-medium hover:bg-red-50 dark:hover:bg-red-950/20 hover:text-red-600 transition-all duration-300 w-full text-left"
+                          onClick={() => {
+                            setMobileMenuOpen(false)
+                            setLogoutDialogOpen(true)
+                          }}
+                        >
+                          <LogOut className="h-5 w-5" />
+                          Log Out
+                        </button>
+                      </>
+                    ) : (
+                      <>
+                        <button
+                          className="flex items-center gap-3 px-4 py-3 rounded-lg text-base font-medium hover:bg-purple-50 dark:hover:bg-purple-950/20 hover:text-purple-600 transition-all duration-300 w-full text-left"
+                          onClick={() => {
+                            setMobileMenuOpen(false)
+                            handleAuthClick('signin')
+                          }}
+                        >
+                          <LogIn className="h-5 w-5" />
+                          Sign In
+                        </button>
+                        <button
+                          className="flex items-center gap-3 px-4 py-3 rounded-lg text-base font-medium bg-gradient-to-r from-purple-600 to-blue-600 text-white hover:from-purple-700 hover:to-blue-700 transition-all duration-300 w-full text-left"
+                          onClick={() => {
+                            setMobileMenuOpen(false)
+                            handleAuthClick('signup')
+                          }}
+                        >
+                          <Sparkles className="h-5 w-5" />
+                          Get Started
+                        </button>
+                      </>
+                    )}
                   </div>
                 </nav>
               </SheetContent>
@@ -308,6 +387,13 @@ export function Header() {
         </div>
       </div>
     </header>
+    
+    {/* Auth Modal */}
+    <AuthModal 
+      open={authModalOpen} 
+      onOpenChange={setAuthModalOpen}
+      defaultTab={authModalTab}
+    />
     
     {/* Logout Dialog */}
     <LogoutDialog 

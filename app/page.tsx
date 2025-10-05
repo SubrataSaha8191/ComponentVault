@@ -12,6 +12,8 @@ import { Badge } from "@/components/ui/badge"
 import { Card, CardContent } from "@/components/ui/card"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Footer } from "@/components/footer"
+import { AuthModal } from "@/components/auth-modal"
+import { useAuth } from "@/contexts/auth-context"
 import Link from "next/link"
 
 // Mock data for components
@@ -207,6 +209,22 @@ export default function ComponentVault() {
   const [copiedId, setCopiedId] = useState<number | null>(null)
   const [favorites, setFavorites] = useState<number[]>([])
   const [counters, setCounters] = useState({ components: 0, developers: 0, downloads: 0 })
+  const [showAuthModal, setShowAuthModal] = useState(false)
+  const [shouldShowWelcomeModal, setShouldShowWelcomeModal] = useState(false)
+  
+  const { user } = useAuth()
+
+  // Check if user should see welcome modal on first visit
+  useEffect(() => {
+    const hasVisited = localStorage.getItem('hasVisited')
+    if (!hasVisited && !user) {
+      const timer = setTimeout(() => {
+        setShouldShowWelcomeModal(true)
+        localStorage.setItem('hasVisited', 'true')
+      }, 2000) // Show after 2 seconds
+      return () => clearTimeout(timer)
+    }
+  }, [user])
 
   // Animated counter effect
   useEffect(() => {
@@ -236,6 +254,16 @@ export default function ComponentVault() {
 
   const toggleFavorite = (id: number) => {
     setFavorites((prev) => (prev.includes(id) ? prev.filter((fav) => fav !== id) : [...prev, id]))
+  }
+
+  const handleGetStarted = () => {
+    if (user) {
+      // User is authenticated, redirect to browse
+      window.location.href = '/browse'
+    } else {
+      // Show auth modal
+      setShowAuthModal(true)
+    }
   }
 
   return (
@@ -317,14 +345,16 @@ export default function ComponentVault() {
 
             {/* Premium CTA Buttons */}
             <div className="mt-12 flex flex-wrap items-center justify-center gap-4 animate-in fade-in duration-700 delay-400">
-              <Link href="/browse">
-                <Button size="lg" className="relative overflow-hidden bg-gradient-to-r from-amber-400 to-yellow-500 hover:from-amber-500 hover:to-yellow-600 text-black font-bold text-lg px-10 py-6 rounded-xl shadow-2xl shadow-amber-500/30 hover:shadow-3xl hover:shadow-amber-500/40 hover:scale-105 transition-all duration-300 group">
-                  <span className="absolute inset-0 bg-gradient-to-r from-white/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></span>
-                  <Eye className="h-5 w-5 mr-2 relative z-10" />
-                  <span className="relative z-10">Browse Components</span>
-                </Button>
-              </Link>
-              <Link href="/submit">
+              <Button 
+                size="lg" 
+                onClick={handleGetStarted}
+                className="relative overflow-hidden bg-gradient-to-r from-amber-400 to-yellow-500 hover:from-amber-500 hover:to-yellow-600 text-black font-bold text-lg px-10 py-6 rounded-xl shadow-2xl shadow-amber-500/30 hover:shadow-3xl hover:shadow-amber-500/40 hover:scale-105 transition-all duration-300 group"
+              >
+                <span className="absolute inset-0 bg-gradient-to-r from-white/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></span>
+                <Eye className="h-5 w-5 mr-2 relative z-10" />
+                <span className="relative z-10">Get Started</span>
+              </Button>
+              <Link href="/demo">
                 <Button
                   size="lg"
                   variant="outline"
@@ -632,14 +662,16 @@ export default function ComponentVault() {
           </p>
           
           <div className="flex flex-wrap items-center justify-center gap-4">
-            <Link href="/browse">
-              <Button size="lg" className="relative overflow-hidden bg-gradient-to-r from-amber-400 to-yellow-500 hover:from-amber-500 hover:to-yellow-600 text-black font-bold text-lg px-12 py-8 rounded-2xl shadow-2xl shadow-amber-500/30 hover:shadow-3xl hover:shadow-amber-500/50 hover:scale-105 transition-all duration-300 group">
-                <span className="absolute inset-0 bg-gradient-to-r from-white/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></span>
-                <Rocket className="h-6 w-6 mr-2 relative z-10" />
-                <span className="relative z-10">Get Started Free</span>
-              </Button>
-            </Link>
-            <Link href="/dashboard">
+            <Button 
+              size="lg" 
+              onClick={handleGetStarted}
+              className="relative overflow-hidden bg-gradient-to-r from-amber-400 to-yellow-500 hover:from-amber-500 hover:to-yellow-600 text-black font-bold text-lg px-12 py-8 rounded-2xl shadow-2xl shadow-amber-500/30 hover:shadow-3xl hover:shadow-amber-500/50 hover:scale-105 transition-all duration-300 group"
+            >
+              <span className="absolute inset-0 bg-gradient-to-r from-white/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></span>
+              <Rocket className="h-6 w-6 mr-2 relative z-10" />
+              <span className="relative z-10">Get Started Free</span>
+            </Button>
+            <Link href="https://github.com/yourusername/componentvault" target="_blank">
               <Button
                 size="lg"
                 variant="outline"
@@ -672,6 +704,18 @@ export default function ComponentVault() {
       
       {/* Footer - Only on landing page */}
       <Footer />
+
+      {/* Authentication Modal */}
+      <AuthModal 
+        open={showAuthModal} 
+        onOpenChange={setShowAuthModal} 
+      />
+
+      {/* Welcome Modal for First-time Visitors */}
+      <AuthModal 
+        open={shouldShowWelcomeModal} 
+        onOpenChange={setShouldShowWelcomeModal} 
+      />
     </div>
   )
 }

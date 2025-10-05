@@ -22,14 +22,49 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { Separator } from "@/components/ui/separator"
+import { useAuth } from "@/contexts/auth-context"
 
 export default function SettingsPage() {
   const [saved, setSaved] = useState(false)
   const [theme, setTheme] = useState("system")
+  const { user } = useAuth()
+
+  // Get user data with fallbacks
+  const displayName = user?.displayName || ""
+  const email = user?.email || ""
+  const photoURL = user?.photoURL || ""
+  const username = email ? email.split('@')[0] : displayName.toLowerCase().replace(/\s+/g, '')
+
+  // Get initials for fallback avatar
+  const getInitials = (name: string) => {
+    if (!name) return "U"
+    return name
+      .split(' ')
+      .map(n => n[0])
+      .join('')
+      .toUpperCase()
+      .slice(0, 2)
+  }
 
   const handleSave = () => {
     setSaved(true)
     setTimeout(() => setSaved(false), 3000)
+  }
+
+  // If user is not authenticated, redirect or show message
+  if (!user) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-background via-muted/20 to-background flex items-center justify-center">
+        <Card className="mx-auto max-w-md text-center">
+          <CardContent className="p-8">
+            <User className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+            <h2 className="text-xl font-semibold mb-2">Sign in to access settings</h2>
+            <p className="text-muted-foreground mb-4">You need to be signed in to access your settings.</p>
+            <Button onClick={() => window.location.href = '/'}>Go to Homepage</Button>
+          </CardContent>
+        </Card>
+      </div>
+    )
   }
 
   return (
@@ -78,9 +113,9 @@ export default function SettingsPage() {
                 {/* Avatar Section */}
                 <div className="flex items-center gap-6">
                   <Avatar className="h-24 w-24 border-4 border-purple-500/20 hover:scale-105 transition-transform duration-300">
-                    <AvatarImage src="/placeholder-user.jpg" alt="Profile" />
+                    <AvatarImage src={photoURL} alt="Profile" />
                     <AvatarFallback className="text-2xl bg-gradient-to-br from-purple-600 to-blue-600 text-white">
-                      AJ
+                      {getInitials(displayName)}
                     </AvatarFallback>
                   </Avatar>
                   <div className="space-y-2">
@@ -101,12 +136,12 @@ export default function SettingsPage() {
                 <div className="grid gap-6 md:grid-cols-2">
                   <div className="space-y-2">
                     <Label htmlFor="fullName">Full Name</Label>
-                    <Input id="fullName" placeholder="Alex Johnson" defaultValue="Alex Johnson" />
+                    <Input id="fullName" placeholder="Enter your full name" defaultValue={displayName} />
                   </div>
                   
                   <div className="space-y-2">
                     <Label htmlFor="username">Username</Label>
-                    <Input id="username" placeholder="alexdesigns" defaultValue="alexdesigns" />
+                    <Input id="username" placeholder="Enter username" defaultValue={username} />
                   </div>
                   
                   <div className="space-y-2">
@@ -116,11 +151,14 @@ export default function SettingsPage() {
                       <Input 
                         id="email" 
                         type="email" 
-                        placeholder="alex@example.com" 
-                        defaultValue="alex.johnson@example.com"
-                        className="pl-10"
+                        value={email}
+                        readOnly
+                        disabled
+                        className="pl-10 bg-muted/50"
+                        title="Email cannot be changed"
                       />
                     </div>
+                    <p className="text-xs text-muted-foreground">Email address from your authentication provider (cannot be changed)</p>
                   </div>
                   
                   <div className="space-y-2">
@@ -129,8 +167,7 @@ export default function SettingsPage() {
                       <MapPin className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                       <Input 
                         id="location" 
-                        placeholder="San Francisco, CA" 
-                        defaultValue="San Francisco, CA"
+                        placeholder="Add your location (e.g., San Francisco, CA)" 
                         className="pl-10"
                       />
                     </div>
@@ -141,8 +178,7 @@ export default function SettingsPage() {
                   <Label htmlFor="bio">Bio</Label>
                   <Textarea 
                     id="bio" 
-                    placeholder="Tell us about yourself..." 
-                    defaultValue="UI/UX Designer & Frontend Developer. Creating beautiful, accessible components for the web."
+                    placeholder="Tell us about yourself... (e.g., UI/UX Designer & Frontend Developer. Creating beautiful, accessible components for the web.)" 
                     rows={4}
                   />
                   <p className="text-xs text-muted-foreground">Brief description for your profile. Max 160 characters.</p>
@@ -156,7 +192,6 @@ export default function SettingsPage() {
                       id="website" 
                       type="url" 
                       placeholder="https://yourwebsite.com" 
-                      defaultValue="https://alexdesigns.dev"
                       className="pl-10"
                     />
                   </div>
@@ -168,11 +203,11 @@ export default function SettingsPage() {
                   <div className="grid gap-4 md:grid-cols-2">
                     <div className="relative">
                       <Twitter className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                      <Input placeholder="Twitter username" defaultValue="@alexdesigns" className="pl-10" />
+                      <Input placeholder="Add Twitter username" className="pl-10" />
                     </div>
                     <div className="relative">
                       <Github className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                      <Input placeholder="GitHub username" defaultValue="alexdesigns" className="pl-10" />
+                      <Input placeholder="Add GitHub username" className="pl-10" />
                     </div>
                   </div>
                 </div>

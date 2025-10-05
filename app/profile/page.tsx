@@ -12,49 +12,76 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Progress } from "@/components/ui/progress"
+import { useAuth } from "@/contexts/auth-context"
 import Link from "next/link"
 
-// Mock user data
-const userData = {
-  name: "Alex Johnson",
-  username: "alexdesigns",
-  email: "alex.johnson@example.com",
-  avatar: "/placeholder-user.jpg",
-  bio: "UI/UX Designer & Frontend Developer. Creating beautiful, accessible components for the web. Open source enthusiast.",
-  location: "San Francisco, CA",
-  website: "https://alexdesigns.dev",
-  twitter: "@alexdesigns",
-  github: "alexdesigns",
-  joinDate: "January 2024",
-  followers: 2847,
-  following: 342,
-  stats: {
+export default function ProfilePage() {
+  const [isFollowing, setIsFollowing] = useState(false)
+  const { user } = useAuth()
+
+  // Get user display name and fallback
+  const displayName = user?.displayName || "User"
+  const email = user?.email || ""
+  const photoURL = user?.photoURL || ""
+  
+  // Create username from email or displayName
+  const username = email ? email.split('@')[0] : displayName.toLowerCase().replace(/\s+/g, '')
+  
+  // Get initials for fallback avatar
+  const getInitials = (name: string) => {
+    return name
+      .split(' ')
+      .map(n => n[0])
+      .join('')
+      .toUpperCase()
+      .slice(0, 2)
+  }
+
+  // Mock data for stats and activity (would come from your backend)
+  const mockStats = {
     components: 48,
     downloads: 125340,
     favorites: 1847,
     views: 89234,
-  },
-  achievements: [
+  }
+
+  const achievements = [
     { name: "Early Adopter", icon: Award, color: "text-purple-500" },
     { name: "Top Contributor", icon: Star, color: "text-yellow-500" },
     { name: "Trending Creator", icon: TrendingUp, color: "text-blue-500" },
     { name: "Community Hero", icon: Heart, color: "text-red-500" },
-  ],
-  recentComponents: [
+  ]
+
+  const recentComponents = [
     { id: 1, name: "Animated Card", downloads: 12400, favorites: 342, views: 5600, thumbnail: "/animated-card-component.jpg" },
     { id: 2, name: "Data Table", downloads: 8900, favorites: 289, views: 4300, thumbnail: "/data-table-component.png" },
     { id: 3, name: "Modal Dialog", downloads: 15200, favorites: 456, views: 7800, thumbnail: "/modal-dialog-component.png" },
-  ],
-  activity: [
+  ]
+
+  const activity = [
     { type: "upload", text: "Uploaded new component: Animated Card", date: "2 hours ago" },
     { type: "favorite", text: "Favorited Navigation Menu", date: "5 hours ago" },
     { type: "achievement", text: "Earned 'Top Contributor' badge", date: "1 day ago" },
     { type: "upload", text: "Updated Data Table component", date: "2 days ago" },
   ]
-}
 
-export default function ProfilePage() {
-  const [isFollowing, setIsFollowing] = useState(false)
+  // If user is not authenticated, show login message
+  if (!user) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-background via-muted/20 to-background flex items-center justify-center">
+        <Card className="mx-auto max-w-md text-center">
+          <CardContent className="p-8">
+            <User className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+            <h2 className="text-xl font-semibold mb-2">Sign in to view your profile</h2>
+            <p className="text-muted-foreground mb-4">You need to be signed in to access your profile page.</p>
+            <Link href="/">
+              <Button>Go to Homepage</Button>
+            </Link>
+          </CardContent>
+        </Card>
+      </div>
+    )
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-muted/20 to-background">
@@ -66,55 +93,49 @@ export default function ProfilePage() {
             {/* Avatar */}
             <div className="flex flex-col sm:flex-row gap-6 items-start sm:items-end -mt-16 mb-6">
               <Avatar className="h-32 w-32 border-4 border-background shadow-xl ring-2 ring-purple-500/20 hover:scale-105 transition-transform duration-300">
-                <AvatarImage src={userData.avatar} alt={userData.name} />
+                <AvatarImage src={photoURL} alt={displayName} />
                 <AvatarFallback className="text-3xl bg-gradient-to-br from-purple-600 to-blue-600 text-white">
-                  {userData.name.split(" ").map(n => n[0]).join("")}
+                  {getInitials(displayName)}
                 </AvatarFallback>
               </Avatar>
               
               <div className="flex-1 space-y-2">
                 <div className="flex flex-wrap items-center gap-3">
-                  <h1 className="text-3xl font-bold animate-in slide-in-from-left-4 duration-500">{userData.name}</h1>
+                  <h1 className="text-3xl font-bold animate-in slide-in-from-left-4 duration-500">{displayName}</h1>
                   <Badge variant="secondary" className="animate-in slide-in-from-right-4 duration-500">
-                    @{userData.username}
+                    @{username}
                   </Badge>
                 </div>
-                <p className="text-muted-foreground max-w-2xl animate-in fade-in duration-700">{userData.bio}</p>
+                <p className="text-muted-foreground max-w-2xl animate-in fade-in duration-700">
+                  UI/UX Designer & Frontend Developer. Creating beautiful, accessible components for the web.
+                </p>
                 
                 {/* Profile Info */}
                 <div className="flex flex-wrap gap-4 text-sm text-muted-foreground animate-in fade-in duration-700 delay-100">
                   <div className="flex items-center gap-1">
                     <MapPin className="h-4 w-4" />
-                    <span>{userData.location}</span>
+                    <span>Add your location</span>
                   </div>
                   <div className="flex items-center gap-1">
                     <LinkIcon className="h-4 w-4" />
-                    <a href={userData.website} className="text-purple-600 hover:underline" target="_blank" rel="noopener noreferrer">
-                      {userData.website.replace("https://", "")}
-                    </a>
+                    <span className="text-purple-600">Add your website</span>
                   </div>
                   <div className="flex items-center gap-1">
                     <Calendar className="h-4 w-4" />
-                    <span>Joined {userData.joinDate}</span>
+                    <span>Joined {new Date(user.metadata.creationTime || '').toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}</span>
                   </div>
                 </div>
 
                 {/* Social Links */}
                 <div className="flex gap-2 animate-in fade-in duration-700 delay-200">
-                  <Button variant="outline" size="sm" asChild>
-                    <a href={`https://twitter.com/${userData.twitter}`} target="_blank" rel="noopener noreferrer">
-                      <Twitter className="h-4 w-4" />
-                    </a>
+                  <Button variant="outline" size="sm">
+                    <Twitter className="h-4 w-4" />
                   </Button>
-                  <Button variant="outline" size="sm" asChild>
-                    <a href={`https://github.com/${userData.github}`} target="_blank" rel="noopener noreferrer">
-                      <Github className="h-4 w-4" />
-                    </a>
+                  <Button variant="outline" size="sm">
+                    <Github className="h-4 w-4" />
                   </Button>
-                  <Button variant="outline" size="sm" asChild>
-                    <a href={userData.website} target="_blank" rel="noopener noreferrer">
-                      <Globe className="h-4 w-4" />
-                    </a>
+                  <Button variant="outline" size="sm">
+                    <Globe className="h-4 w-4" />
                   </Button>
                 </div>
               </div>
@@ -145,25 +166,25 @@ export default function ProfilePage() {
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 animate-in fade-in slide-in-from-bottom-4 duration-700 delay-200">
               <Card className="hover:shadow-md transition-all duration-300 hover:-translate-y-1 bg-gradient-to-br from-purple-50 to-background dark:from-purple-950/20">
                 <CardContent className="p-4 text-center">
-                  <div className="text-3xl font-bold text-purple-600">{userData.stats.components}</div>
+                  <div className="text-3xl font-bold text-purple-600">{mockStats.components}</div>
                   <div className="text-sm text-muted-foreground mt-1">Components</div>
                 </CardContent>
               </Card>
               <Card className="hover:shadow-md transition-all duration-300 hover:-translate-y-1 bg-gradient-to-br from-blue-50 to-background dark:from-blue-950/20">
                 <CardContent className="p-4 text-center">
-                  <div className="text-3xl font-bold text-blue-600">{userData.stats.downloads.toLocaleString()}</div>
+                  <div className="text-3xl font-bold text-blue-600">{mockStats.downloads.toLocaleString()}</div>
                   <div className="text-sm text-muted-foreground mt-1">Downloads</div>
                 </CardContent>
               </Card>
               <Card className="hover:shadow-md transition-all duration-300 hover:-translate-y-1 bg-gradient-to-br from-red-50 to-background dark:from-red-950/20">
                 <CardContent className="p-4 text-center">
-                  <div className="text-3xl font-bold text-red-600">{userData.stats.favorites.toLocaleString()}</div>
+                  <div className="text-3xl font-bold text-red-600">{mockStats.favorites.toLocaleString()}</div>
                   <div className="text-sm text-muted-foreground mt-1">Favorites</div>
                 </CardContent>
               </Card>
               <Card className="hover:shadow-md transition-all duration-300 hover:-translate-y-1 bg-gradient-to-br from-green-50 to-background dark:from-green-950/20">
                 <CardContent className="p-4 text-center">
-                  <div className="text-3xl font-bold text-green-600">{userData.stats.views.toLocaleString()}</div>
+                  <div className="text-3xl font-bold text-green-600">{mockStats.views.toLocaleString()}</div>
                   <div className="text-sm text-muted-foreground mt-1">Views</div>
                 </CardContent>
               </Card>
@@ -182,7 +203,7 @@ export default function ProfilePage() {
               </TabsList>
               
               <TabsContent value="components" className="space-y-4 mt-6">
-                {userData.recentComponents.map((component, index) => (
+                {recentComponents.map((component, index) => (
                   <Card 
                     key={component.id} 
                     className="group hover:shadow-lg transition-all duration-300 hover:-translate-y-1 animate-in fade-in slide-in-from-bottom-4"
@@ -229,7 +250,7 @@ export default function ProfilePage() {
               </TabsContent>
               
               <TabsContent value="activity" className="space-y-3 mt-6">
-                {userData.activity.map((item, index) => (
+                {activity.map((item, index) => (
                   <Card 
                     key={index} 
                     className="hover:bg-muted/50 transition-all duration-300 animate-in fade-in slide-in-from-left-4"
@@ -261,7 +282,7 @@ export default function ProfilePage() {
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
-                {userData.achievements.map((achievement, index) => (
+                {achievements.map((achievement, index) => (
                   <div 
                     key={index} 
                     className="flex items-center gap-3 p-3 rounded-lg bg-muted/50 hover:bg-muted transition-all duration-300 hover:scale-105 cursor-pointer animate-in fade-in"
@@ -286,14 +307,14 @@ export default function ProfilePage() {
                 <div className="space-y-2">
                   <div className="flex justify-between text-sm">
                     <span className="text-muted-foreground">Followers</span>
-                    <span className="font-semibold">{userData.followers.toLocaleString()}</span>
+                    <span className="font-semibold">2,847</span>
                   </div>
                   <Progress value={75} className="h-2" />
                 </div>
                 <div className="space-y-2">
                   <div className="flex justify-between text-sm">
                     <span className="text-muted-foreground">Following</span>
-                    <span className="font-semibold">{userData.following.toLocaleString()}</span>
+                    <span className="font-semibold">342</span>
                   </div>
                   <Progress value={25} className="h-2" />
                 </div>
