@@ -1,35 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { adminDb, adminAuth } from '@/lib/firebase/admin'
+import * as admin from 'firebase-admin'
 
-// GET - Get collection by ID
-export async function GET(
-  request: NextRequest,
-  { params }: { params: { id: string } }
-) {
-  try {
-    const { id } = params
-    
-    const doc = await adminDb.collection('collections').doc(id).get()
-    
-    if (!doc.exists) {
-      return NextResponse.json(
-        { error: 'Collection not found' },
-        { status: 404 }
-      )
-    }
-    
-    return NextResponse.json({ id: doc.id, ...doc.data() })
-  } catch (error) {
-    console.error('Error fetching collection:', error)
-    return NextResponse.json(
-      { error: 'Failed to fetch collection' },
-      { status: 500 }
-    )
-  }
-}
-
-// PATCH - Update collection
-export async function PATCH(
+// POST - Add components to collection
+export async function POST(
   request: NextRequest,
   { params }: { params: { id: string } }
 ) {
@@ -66,33 +40,37 @@ export async function PATCH(
       )
     }
     
-  const body = await request.json()
-  const { name, description, tags, isPublic, coverImage } = body
+    const body = await request.json()
+    const { componentIds } = body
     
-    const updateData: any = {
-      updatedAt: new Date().toISOString(),
+    if (!componentIds || !Array.isArray(componentIds) || componentIds.length === 0) {
+      return NextResponse.json(
+        { error: 'componentIds array is required' },
+        { status: 400 }
+      )
     }
     
-  if (name) updateData.name = name
-  if (description !== undefined) updateData.description = description
-  if (tags) updateData.tags = tags
-  if (isPublic !== undefined) updateData.isPublic = isPublic
-  // Optional cover image (base64 or URL) for collection thumbnail
-  if (coverImage) updateData.coverImage = coverImage
+    console.log('Adding componentIds to collection:', componentIds)
     
-    await adminDb.collection('collections').doc(id).update(updateData)
+    // Add components to collection using arrayUnion
+    await adminDb.collection('collections').doc(id).update({
+      componentIds: admin.firestore.FieldValue.arrayUnion(...componentIds),
+      updatedAt: new Date().toISOString(),
+    })
+    
+    console.log('Successfully added components to collection')
     
     return NextResponse.json({ success: true })
   } catch (error) {
-    console.error('Error updating collection:', error)
+    console.error('Error adding components to collection:', error)
     return NextResponse.json(
-      { error: 'Failed to update collection' },
+      { error: 'Failed to add components', details: error instanceof Error ? error.message : 'Unknown error' },
       { status: 500 }
     )
   }
 }
 
-// DELETE - Delete collection
+// DELETE - Remove component from collection
 export async function DELETE(
   request: NextRequest,
   { params }: { params: { id: string } }
@@ -130,13 +108,27 @@ export async function DELETE(
       )
     }
     
-    await adminDb.collection('collections').doc(id).delete()
+    const body = await request.json()
+    const { componentId } = body
+    
+    if (!componentId) {
+      return NextResponse.json(
+        { error: 'componentId is required' },
+        { status: 400 }
+      )
+    }
+    
+    // Remove component from collection using arrayRemove
+    await adminDb.collection('collections').doc(id).update({
+      componentIds: admin.firestore.FieldValue.arrayRemove(componentId),
+      updatedAt: new Date().toISOString(),
+    })
     
     return NextResponse.json({ success: true })
   } catch (error) {
-    console.error('Error deleting collection:', error)
+    console.error('Error removing component from collection:', error)
     return NextResponse.json(
-      { error: 'Failed to delete collection' },
+      { error: 'Failed to remove component', details: error instanceof Error ? error.message : 'Unknown error' },
       { status: 500 }
     )
   }

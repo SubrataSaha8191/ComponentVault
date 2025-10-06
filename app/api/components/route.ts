@@ -14,6 +14,7 @@ export async function GET(request: NextRequest) {
     const limitCount = searchParams.get('limit');
     const orderByField = searchParams.get('orderBy');
     const orderDirection = searchParams.get('order') as 'asc' | 'desc';
+    const includePrivate = searchParams.get('includePrivate') === 'true';
 
     // Fetch single component by ID
     if (id) {
@@ -27,7 +28,45 @@ export async function GET(request: NextRequest) {
       return NextResponse.json(component);
     }
 
-    // Fetch multiple components with filters
+    // If fetching by authorId with includePrivate flag, use Admin SDK
+    if (authorId && includePrivate) {
+      const authHeader = request.headers.get('Authorization');
+      if (!authHeader || !authHeader.startsWith('Bearer ')) {
+        return NextResponse.json(
+          { error: 'Unauthorized' },
+          { status: 401 }
+        );
+      }
+
+      // Verify the user is requesting their own components
+      const { adminDb, adminAuth } = await import('@/lib/firebase/admin');
+      const idToken = authHeader.split('Bearer ')[1];
+      const decodedToken = await adminAuth.verifyIdToken(idToken);
+      
+      if (decodedToken.uid !== authorId) {
+        return NextResponse.json(
+          { error: 'Forbidden: Can only fetch your own private components' },
+          { status: 403 }
+        );
+      }
+
+      // Fetch all components by author (including private ones)
+      let componentsQuery = adminDb.collection('components').where('authorId', '==', authorId);
+      
+      if (orderByField) {
+        componentsQuery = componentsQuery.orderBy(orderByField, orderDirection || 'desc');
+      }
+      if (limitCount) {
+        componentsQuery = componentsQuery.limit(parseInt(limitCount));
+      }
+
+      const snapshot = await componentsQuery.get();
+      const components = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      
+      return NextResponse.json(components);
+    }
+
+    // Fetch multiple public components with filters
     const components = await getComponents({
       category: category || undefined,
       framework: framework || undefined,

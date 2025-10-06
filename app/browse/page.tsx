@@ -233,7 +233,8 @@ export default function BrowsePage() {
     if (!user) return
     
     try {
-      await addDoc(collection(db, "activities"), {
+      // Write to the secured collection per security rules
+      await addDoc(collection(db, "userActivities"), {
         userId: user.uid,
         type,
         componentId,
@@ -252,9 +253,11 @@ export default function BrowsePage() {
       setCopiedId(component.id)
       toast.success("Component code copied to clipboard!")
       
-      // Update copy count
-      await updateDoc(doc(db, "components", component.id), {
-        copies: increment(1)
+      // Update copy count via server
+      await fetch(`/api/components/${component.id}/metrics`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'copy' })
       })
       
       // Track activity
@@ -274,10 +277,11 @@ export default function BrowsePage() {
       // Download the component as ZIP
       await downloadComponent(component)
       
-      // Update download count in Firestore
-      await updateDoc(doc(db, "components", component.id), {
-        downloads: increment(1),
-        "stats.downloads": increment(1)
+      // Update download count via server
+      await fetch(`/api/components/${component.id}/metrics`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'download' })
       })
       
       // Track activity
@@ -339,6 +343,13 @@ export default function BrowsePage() {
         
         // Track activity
         await trackActivity("unfavorite", componentId, "Removed component from favorites")
+
+        // Decrement like count via server
+        await fetch(`/api/components/${componentId}/metrics`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'unlike' })
+        })
       } else {
         // Add to favorites
         await addDoc(collection(db, "favorites"), {
@@ -353,10 +364,12 @@ export default function BrowsePage() {
         
         // Track activity
         await trackActivity("favorite", componentId, "Added component to favorites")
-        
-        // Update component likes count
-        await updateDoc(doc(db, "components", componentId), {
-          likes: increment(1)
+
+        // Increment like count via server
+        await fetch(`/api/components/${componentId}/metrics`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'like' })
         })
       }
     } catch (error) {
@@ -367,19 +380,17 @@ export default function BrowsePage() {
 
   const handlePreview = async (component: Component) => {
     try {
-      // Update view count
-      await updateDoc(doc(db, "components", component.id), {
-        views: increment(1)
-      })
-      
-      // Track activity
+      // Increment views via server API (Admin SDK bypasses client rules)
+      await fetch(`/api/components/${component.id}`, { method: "GET" })
+
+      // Track activity (writes to userActivities per rules)
       await trackActivity("view", component.id, `Viewed ${component.title || component.name}`)
-      
+
       // Open preview modal
       setPreviewComponent(component)
       setShowPreviewModal(true)
     } catch (error) {
-      console.error("Error updating view count:", error)
+      console.error("Error during preview:", error)
       toast.error("Failed to preview component")
     }
   }
@@ -607,7 +618,7 @@ export default function BrowsePage() {
                           <Button 
                             size="sm" 
                             onClick={() => handlePreview(component)}
-                            className="w-full bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white shadow-lg shadow-purple-500/20 hover:shadow-xl hover:shadow-purple-500/30 transition-all duration-300"
+                            className="w-full bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white shadow-sm shadow-purple-500/20 hover:shadow-sm hover:shadow-purple-500/30 transition-all duration-300"
                           >
                             <Eye className="h-4 w-4 mr-1" />
                             Preview

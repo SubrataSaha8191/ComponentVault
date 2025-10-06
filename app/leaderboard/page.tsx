@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
@@ -19,11 +19,32 @@ import {
   ChevronDown,
   Minus,
   Sparkles,
+  Loader2,
 } from "lucide-react"
 import Link from "next/link"
 
-// Mock leaderboard data
-const topContributors = [
+interface LeaderboardUser {
+  id: string
+  rank: number
+  username: string
+  name: string
+  avatar: string | null
+  components: number
+  downloads: number
+  rating: number
+  change: string
+  badges: string[]
+}
+
+interface LeaderboardStats {
+  totalContributors: number
+  totalDownloads: number
+  avgRating: number
+  activeUsers: number
+}
+
+// Mock leaderboard data (fallback)
+const mockTopContributors = [
   {
     rank: 1,
     username: "johndoe",
@@ -136,50 +157,84 @@ const topContributors = [
   },
 ]
 
-const topDownloads = topContributors
-  .map((user) => ({ ...user }))
-  .sort((a, b) => b.downloads - a.downloads)
-  .map((user, index) => ({ ...user, rank: index + 1 }))
-
-const topRated = topContributors
-  .map((user) => ({ ...user }))
-  .sort((a, b) => b.rating - a.rating)
-  .map((user, index) => ({ ...user, rank: index + 1 }))
-
-const risingStars = topContributors
-  .filter((user) => user.change === "up")
-  .map((user, index) => ({ ...user, rank: index + 1 }))
-
-const stats = [
-  {
-    label: "Total Contributors",
-    value: "1,234",
-    icon: Code,
-    color: "text-purple-500",
-  },
-  {
-    label: "Total Downloads",
-    value: "156K",
-    icon: Download,
-    color: "text-blue-500",
-  },
-  {
-    label: "Avg Rating",
-    value: "4.7",
-    icon: Star,
-    color: "text-yellow-500",
-  },
-  {
-    label: "Active Users",
-    value: "892",
-    icon: TrendingUp,
-    color: "text-emerald-500",
-  },
-]
-
 export default function LeaderboardPage() {
-  const [timePeriod, setTimePeriod] = useState("monthly")
+  const [timePeriod, setTimePeriod] = useState("alltime")
   const [activeTab, setActiveTab] = useState("contributors")
+  const [leaderboardData, setLeaderboardData] = useState<LeaderboardUser[]>([])
+  const [stats, setStats] = useState<LeaderboardStats | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [loadingTab, setLoadingTab] = useState(false)
+
+  // Fetch stats on mount
+  useEffect(() => {
+    const fetchStats = async () => {
+      try {
+        const response = await fetch('/api/leaderboard/stats')
+        if (response.ok) {
+          const data = await response.json()
+          setStats(data)
+        }
+      } catch (error) {
+        console.error('Error fetching stats:', error)
+      }
+    }
+    fetchStats()
+  }, [])
+
+  // Fetch leaderboard data when tab or period changes
+  useEffect(() => {
+    const fetchLeaderboard = async () => {
+      setLoadingTab(activeTab !== 'contributors' || !loading)
+      setLoading(true)
+      try {
+        const response = await fetch(`/api/leaderboard?type=${activeTab}&period=${timePeriod}&limit=20`)
+        if (response.ok) {
+          const data = await response.json()
+          setLeaderboardData(data)
+        }
+      } catch (error) {
+        console.error('Error fetching leaderboard:', error)
+        setLeaderboardData([])
+      } finally {
+        setLoading(false)
+        setLoadingTab(false)
+      }
+    }
+    fetchLeaderboard()
+  }, [activeTab, timePeriod])
+
+  const formatNumber = (num: number): string => {
+    if (num >= 1000000) return `${(num / 1000000).toFixed(1)}M`
+    if (num >= 1000) return `${(num / 1000).toFixed(1)}K`
+    return num.toString()
+  }
+
+  const statsCards = stats ? [
+    {
+      label: "Total Contributors",
+      value: formatNumber(stats.totalContributors),
+      icon: Code,
+      color: "text-purple-500",
+    },
+    {
+      label: "Total Downloads",
+      value: formatNumber(stats.totalDownloads),
+      icon: Download,
+      color: "text-blue-500",
+    },
+    {
+      label: "Avg Rating",
+      value: stats.avgRating.toFixed(1),
+      icon: Star,
+      color: "text-yellow-500",
+    },
+    {
+      label: "Active Users",
+      value: formatNumber(stats.activeUsers),
+      icon: TrendingUp,
+      color: "text-emerald-500",
+    },
+  ] : []
 
   const getRankIcon = (rank: number) => {
     if (rank === 1) return <Crown className="h-5 w-5 text-yellow-500" />
@@ -219,7 +274,26 @@ export default function LeaderboardPage() {
     return <Minus className="h-4 w-4 text-muted-foreground" />
   }
 
-  const renderLeaderboard = (data: typeof topContributors, metric: "components" | "downloads" | "rating") => (
+  const renderLeaderboard = (data: LeaderboardUser[], metric: "components" | "downloads" | "rating") => {
+    if (loadingTab || loading) {
+      return (
+        <div className="flex items-center justify-center py-12">
+          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+        </div>
+      )
+    }
+
+    if (data.length === 0) {
+      return (
+        <div className="text-center py-12">
+          <Trophy className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+          <h3 className="text-lg font-semibold mb-2">No Data Available</h3>
+          <p className="text-muted-foreground">Check back later for leaderboard updates</p>
+        </div>
+      )
+    }
+
+    return (
     <div className="space-y-4">
       {/* Top 3 Podium */}
       <div className="grid gap-4 md:grid-cols-3 mb-8">
@@ -347,7 +421,8 @@ export default function LeaderboardPage() {
         ))}
       </div>
     </div>
-  )
+    )
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-background to-primary/5">
@@ -365,7 +440,7 @@ export default function LeaderboardPage() {
 
         {/* Stats Overview */}
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 mb-8">
-          {stats.map((stat, index) => (
+          {statsCards.map((stat, index) => (
             <Card key={index} className="hover:shadow-lg transition-shadow">
               <CardContent className="pt-6">
                 <div className="flex items-center justify-between">
@@ -422,11 +497,11 @@ export default function LeaderboardPage() {
             </TabsTrigger>
           </TabsList>
 
-          <TabsContent value="contributors">{renderLeaderboard(topContributors, "components")}</TabsContent>
+          <TabsContent value="contributors">{renderLeaderboard(leaderboardData, "components")}</TabsContent>
 
-          <TabsContent value="downloads">{renderLeaderboard(topDownloads, "downloads")}</TabsContent>
+          <TabsContent value="downloads">{renderLeaderboard(leaderboardData, "downloads")}</TabsContent>
 
-          <TabsContent value="rated">{renderLeaderboard(topRated, "rating")}</TabsContent>
+          <TabsContent value="rated">{renderLeaderboard(leaderboardData, "rating")}</TabsContent>
 
           <TabsContent value="rising">
             <Card className="mb-6 border-2 border-emerald-500/20 bg-emerald-500/5">
@@ -436,11 +511,11 @@ export default function LeaderboardPage() {
                   Rising Stars
                 </CardTitle>
                 <CardDescription>
-                  Contributors with the fastest growth this {timePeriod.replace("ly", "")}
+                  Contributors with the fastest growth this {timePeriod === 'alltime' ? 'year' : timePeriod.replace("ly", "")}
                 </CardDescription>
               </CardHeader>
             </Card>
-            {renderLeaderboard(risingStars, "components")}
+            {renderLeaderboard(leaderboardData, "components")}
           </TabsContent>
         </Tabs>
       </div>

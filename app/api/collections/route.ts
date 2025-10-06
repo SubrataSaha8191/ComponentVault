@@ -22,16 +22,16 @@ export async function GET(request: NextRequest) {
     const orderBy = searchParams.get('orderBy');
     const order = searchParams.get('order') as 'asc' | 'desc';
 
-    // Fetch single collection by ID
+    // Fetch single collection by ID (use Admin SDK for server-side access)
     if (id) {
-      const collection = await getCollectionById(id);
-      if (!collection) {
+      const doc = await adminDb.collection('collections').doc(id).get();
+      if (!doc.exists) {
         return NextResponse.json(
           { error: 'Collection not found' },
           { status: 404 }
         );
       }
-      return NextResponse.json(collection);
+      return NextResponse.json({ id: doc.id, ...doc.data() });
     }
 
     // Fetch user collections

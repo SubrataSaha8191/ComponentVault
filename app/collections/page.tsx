@@ -35,6 +35,8 @@ export default function CollectionsPage() {
   const [activeTab, setActiveTab] = useState("all")
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false)
   const [isCreating, setIsCreating] = useState(false)
+  const [thumbnailFile, setThumbnailFile] = useState<File | null>(null)
+  const [thumbnailPreview, setThumbnailPreview] = useState<string | null>(null)
 
   // Fetch all collections with current user context
   const { collections, loading: collectionsLoading, error: collectionsError } = useAllCollections({
@@ -117,6 +119,59 @@ export default function CollectionsPage() {
     return filtered
   }, [collections, searchQuery, activeTab, user, sortBy])
 
+  // Handle thumbnail upload
+  const handleThumbnailChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (file) {
+      if (!file.type.startsWith('image/')) {
+        alert('Please select an image file')
+        return
+      }
+      if (file.size > 5 * 1024 * 1024) {
+        alert('Image size should be less than 5MB')
+        return
+      }
+      setThumbnailFile(file)
+      const reader = new FileReader()
+      reader.onloadend = () => setThumbnailPreview(reader.result as string)
+      reader.readAsDataURL(file)
+    }
+  }
+
+  // Upload image to base64 or external service
+  const uploadThumbnail = async (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      if (file.size <= 1024 * 1024) {
+        // Base64 for small files
+        const reader = new FileReader()
+        reader.onload = () => resolve(reader.result as string)
+        reader.onerror = () => reject(new Error('Failed to read file'))
+        reader.readAsDataURL(file)
+      } else {
+        // Compress for larger files
+        const canvas = document.createElement('canvas')
+        const ctx = canvas.getContext('2d')
+        const img = new Image()
+        img.onload = () => {
+          let { width, height } = img
+          const maxWidth = 800
+          const maxHeight = 600
+          if (width > maxWidth || height > maxHeight) {
+            const ratio = Math.min(maxWidth / width, maxHeight / height)
+            width *= ratio
+            height *= ratio
+          }
+          canvas.width = width
+          canvas.height = height
+          ctx?.drawImage(img, 0, 0, width, height)
+          resolve(canvas.toDataURL(file.type, 0.8))
+        }
+        img.onerror = () => reject(new Error('Failed to process image'))
+        img.src = URL.createObjectURL(file)
+      }
+    })
+  }
+
   // Handle collection creation
   const handleCreateCollection = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault()
@@ -131,17 +186,14 @@ export default function CollectionsPage() {
       const visibility = formData.get('visibility') as string
       const tags = formData.get('tags') as string
 
-      console.log('Creating collection with:', {
-        name,
-        description,
-        userId: user.uid,
-        userName: user.displayName || user.email,
-        isPublic: visibility === 'public',
-        tags: tags.split(',').map(tag => tag.trim()).filter(Boolean),
-      })
+      // Upload thumbnail if provided
+      let coverImage = ''
+      if (thumbnailFile) {
+        coverImage = await uploadThumbnail(thumbnailFile)
+      }
 
       // Attach Firebase ID token to authorize server-side write
-      const idToken = await user.getIdToken();
+      const idToken = await user.getIdToken()
       const response = await fetch('/api/collections', {
         method: 'POST',
         headers: {
@@ -151,24 +203,21 @@ export default function CollectionsPage() {
         body: JSON.stringify({
           name,
           description,
-          // userId comes from token on server to avoid spoofing
           userName: user.displayName || user.email,
           isPublic: visibility === 'public',
           tags: tags.split(',').map(tag => tag.trim()).filter(Boolean),
+          coverImage,
         }),
       })
 
       const result = await response.json()
-      console.log('API Response:', result)
-      console.log('Response status:', response.status)
-      console.log('Response ok:', response.ok)
 
       if (response.ok) {
         setIsCreateDialogOpen(false)
-        // You might want to add a refresh function to the hook instead of reloading
+        setThumbnailFile(null)
+        setThumbnailPreview(null)
         window.location.reload()
       } else {
-        console.error('Failed to create collection:', result)
         alert(`Failed to create collection: ${result.error}${result.details ? ' - ' + result.details : ''}`)
       }
     } catch (error) {
@@ -260,6 +309,28 @@ export default function CollectionsPage() {
                     <div className="space-y-2">
                       <Label htmlFor="tags">Tags (comma separated)</Label>
                       <Input id="tags" name="tags" placeholder="dashboard, analytics, charts" />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="thumbnail">Collection Thumbnail (Optional)</Label>
+                      <Input
+                        id="thumbnail"
+                        type="file"
+                        accept="image/*"
+                        onChange={handleThumbnailChange}
+                        className="cursor-pointer"
+                      />
+                      {thumbnailPreview && (
+                        <div className="relative mt-2 aspect-video overflow-hidden rounded-lg border">
+                          <img
+                            src={thumbnailPreview}
+                            alt="Thumbnail preview"
+                            className="object-cover w-full h-full"
+                          />
+                        </div>
+                      )}
+                      <p className="text-xs text-muted-foreground">
+                        Recommended: 800x600px or similar aspect ratio, max 5MB
+                      </p>
                     </div>
                   </div>
                   <DialogFooter>

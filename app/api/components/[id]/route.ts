@@ -1,6 +1,46 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { updateComponent, deleteComponent } from '@/lib/firebase/firestore';
 import { deleteComponentImages } from '@/lib/firebase/storage';
+import { adminDb } from '@/lib/firebase/admin'
+import * as admin from 'firebase-admin'
+
+// GET - Fetch single component by ID (Admin SDK, safe for server usage)
+export async function GET(
+  request: NextRequest,
+  { params }: { params: { id: string } }
+) {
+  try {
+    const { id } = params
+
+    const docRef = adminDb.collection('components').doc(id)
+    const doc = await docRef.get()
+
+    if (!doc.exists) {
+      return NextResponse.json(
+        { error: 'Component not found' },
+        { status: 404 }
+      )
+    }
+
+    const data = { id: doc.id, ...doc.data() }
+
+    // Best-effort: increment views using Admin SDK (won't fail clients due to rules)
+    try {
+      await docRef.update({ views: admin.firestore.FieldValue.increment(1) })
+    } catch (e) {
+      // Non-fatal
+      console.warn('Failed to increment component views (non-fatal):', e)
+    }
+
+    return NextResponse.json(data)
+  } catch (error) {
+    console.error('Error fetching component:', error)
+    return NextResponse.json(
+      { error: 'Failed to fetch component' },
+      { status: 500 }
+    )
+  }
+}
 
 // PUT - Update a component
 export async function PUT(
