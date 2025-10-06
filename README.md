@@ -5,7 +5,7 @@ A Next.js-powered component library platform integrated with Firebase — built 
 🚀 Overview
 
 ComponentVault is a web platform designed to help developers upload, manage, and discover UI components efficiently.
-Built using Next.js, Firebase Firestore, and Firebase Storage, it offers a seamless experience for storing reusable design blocks, complete with screenshots and metadata.
+Built using Next.js, Firebase Firestore, and IMGBB, it offers a seamless experience for storing reusable design blocks, complete with screenshots and metadata.
 
 🧠 Key Features
 
