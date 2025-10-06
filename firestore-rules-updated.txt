@@ -1,0 +1,79 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Allow public read access to components
+    match /components/{componentId} {
+      allow read: if true;
+      allow create: if request.auth != null
+                    && request.auth.uid == resource.data.authorId;
+      allow update: if request.auth != null
+                    && request.auth.uid == resource.data.authorId;
+      allow delete: if request.auth != null
+                    && request.auth.uid == resource.data.authorId;
+    }
+    
+    // Allow public read access to collections
+    match /collections/{collectionId} {
+      allow read: if true;
+      allow create: if request.auth != null
+                    && request.auth.uid == resource.data.authorId;
+      allow update: if request.auth != null
+                    && request.auth.uid == resource.data.authorId;
+      allow delete: if request.auth != null
+                    && request.auth.uid == resource.data.authorId;
+    }
+    
+    // Users can read any user profile, but only write their own
+    match /users/{userId} {
+      allow read: if true;
+      allow write: if request.auth != null && request.auth.uid == userId;
+    }
+    
+    // Favorites - users can only access their own
+    match /favorites/{favoriteId} {
+      allow read, write: if request.auth != null
+                         && request.auth.uid == resource.data.userId;
+    }
+    
+    // Comments - public read, authenticated write
+    match /comments/{commentId} {
+      allow read: if true;
+      allow create: if request.auth != null;
+      allow update, delete: if request.auth != null
+                            && request.auth.uid == resource.data.userId;
+    }
+    
+    // Activities - users can only see their own activities
+    match /activities/{activityId} {
+      allow read, write: if request.auth != null
+                         && request.auth.uid == resource.data.userId;
+    }
+    
+    // Follows - public read for counts, authenticated write
+    match /follows/{followId} {
+      allow read: if true;
+      allow create: if request.auth != null
+                    && request.auth.uid == resource.data.followerId;
+      allow delete: if request.auth != null
+                    && request.auth.uid == resource.data.followerId;
+    }
+    
+    // Component stats - public read, authenticated write
+    match /componentStats/{componentId} {
+      allow read: if true;
+      allow write: if request.auth != null;
+    }
+    
+    // Debug tests - only for authenticated users
+    match /debug-tests/{testId} {
+      allow read, write: if request.auth != null;
+    }
+    
+    // Allow all operations for authenticated users in development
+    // Remove this rule in production!
+    match /{document=**} {
+      allow read, write: if request.auth != null;
+    }
+  }
+}

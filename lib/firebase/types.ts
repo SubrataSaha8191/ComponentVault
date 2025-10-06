@@ -21,10 +21,12 @@ export interface User {
 export interface Component {
   id: string;
   title: string;
+  name?: string; // Alternative name field
   description: string;
   code: string;
   previewImage: string;
   thumbnailImage?: string;
+  thumbnail?: string; // Alternative thumbnail field
   category: ComponentCategory;
   tags: string[];
   framework: Framework;
@@ -37,7 +39,9 @@ export interface Component {
   likes: number;
   views: number;
   copies: number;
+  downloads?: number; // Add downloads field
   isPublic: boolean;
+  isPublished?: boolean; // Add isPublished field
   isFeatured: boolean;
   createdAt: Date;
   updatedAt: Date;
@@ -47,6 +51,16 @@ export interface Component {
   livePreviewUrl?: string;
   installCommand?: string;
   usageInstructions?: string;
+  stats?: ComponentMetrics; // Add stats field
+}
+
+// Component Metrics Interface (simplified stats for dashboard)
+export interface ComponentMetrics {
+  views: number;
+  downloads: number;
+  likes: number;
+  rating: number;
+  totalRatings?: number;
 }
 
 // Collection Types
