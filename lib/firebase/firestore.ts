@@ -29,7 +29,7 @@ const COLLECTIONS = {
   COLLECTIONS: 'collections',
   FAVORITES: 'favorites',
   COMMENTS: 'comments',
-  ACTIVITIES: 'activities',
+  ACTIVITIES: 'userActivities',
   FOLLOWS: 'follows',
   STATS: 'stats',
   LIBRARY_COMPONENTS: 'libraryComponents',
@@ -260,14 +260,18 @@ export const createCollection = async (collectionData: Omit<Collection, 'id'>) =
   
   await setDoc(collectionRef, newCollection);
   
-  // Create activity
-  await createActivity({
-    userId: collectionData.userId,
-    type: 'collection',
-    targetId: collectionRef.id,
-    targetType: 'collection',
-    description: `Created collection: ${collectionData.name}`,
-  });
+  // Create activity - don't fail collection creation if this fails
+  try {
+    await createActivity({
+      userId: collectionData.userId,
+      type: 'collection',
+      targetId: collectionRef.id,
+      targetType: 'collection',
+      description: `Created collection: ${collectionData.name}`,
+    });
+  } catch (error) {
+    console.error('Failed to create activity, but collection was created successfully:', error);
+  }
   
   return collectionRef.id;
 };
@@ -464,4 +468,142 @@ export const searchComponents = async (searchTerm: string, limitCount: number = 
     component.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
     component.tags.some(tag => tag.toLowerCase().includes(searchTerm.toLowerCase()))
   );
+};
+
+// ==================== STATISTICS OPERATIONS ====================
+
+export const getCollectionStats = async () => {
+  try {
+    // Get total collections
+    const totalCollectionsQuery = query(collection(db, COLLECTIONS.COLLECTIONS));
+    const totalSnapshot = await getDocs(totalCollectionsQuery);
+    const total = totalSnapshot.size;
+
+    // Get public collections
+    const publicCollectionsQuery = query(
+      collection(db, COLLECTIONS.COLLECTIONS),
+      where('isPublic', '==', true)
+    );
+    const publicSnapshot = await getDocs(publicCollectionsQuery);
+    const publicCount = publicSnapshot.size;
+
+    return {
+      total,
+      public: publicCount,
+      private: total - publicCount
+    };
+  } catch (error) {
+    console.error('Error fetching collection stats:', error);
+    return {
+      total: 0,
+      public: 0,
+      private: 0
+    };
+  }
+};
+
+export const getComponentStats = async () => {
+  try {
+    // Get total components
+    const totalComponentsQuery = query(
+      collection(db, COLLECTIONS.COMPONENTS),
+      where('isPublic', '==', true)
+    );
+    const totalSnapshot = await getDocs(totalComponentsQuery);
+    const total = totalSnapshot.size;
+
+    // Use a simpler trending calculation to avoid complex queries
+    // For now, just show a fixed percentage or calculate differently
+    return {
+      total,
+      trending: '+15%' // Placeholder trending value
+    };
+  } catch (error) {
+    console.error('Error fetching component stats:', error);
+    return {
+      total: 0,
+      trending: '+0%'
+    };
+  }
+};
+
+export const getAllPublicCollections = async (constraints: {
+  limitCount?: number;
+  orderByField?: string;
+  orderDirection?: 'asc' | 'desc';
+  userId?: string;
+} = {}) => {
+  try {
+    if (constraints.userId) {
+      // If userId is provided, get user collections and public collections separately
+      const userQuery = query(
+        collection(db, COLLECTIONS.COLLECTIONS),
+        where('userId', '==', constraints.userId),
+        orderBy('updatedAt', 'desc'),
+        ...(constraints.limitCount ? [limit(Math.floor(constraints.limitCount / 2))] : [])
+      );
+      
+      const publicQuery = query(
+        collection(db, COLLECTIONS.COLLECTIONS),
+        where('isPublic', '==', true),
+        orderBy('updatedAt', 'desc'),
+        ...(constraints.limitCount ? [limit(Math.floor(constraints.limitCount / 2))] : [])
+      );
+      
+      const [userSnapshot, publicSnapshot] = await Promise.all([
+        getDocs(userQuery),
+        getDocs(publicQuery)
+      ]);
+      
+      const userCollections = userSnapshot.docs.map(doc => doc.data() as Collection);
+      const publicCollections = publicSnapshot.docs.map(doc => doc.data() as Collection);
+      
+      // Combine and deduplicate
+      const allCollections = [...publicCollections];
+      userCollections.forEach(userCollection => {
+        if (!allCollections.find(c => c.id === userCollection.id)) {
+          allCollections.push(userCollection);
+        }
+      });
+      
+      return allCollections;
+    }
+    
+    // For public collections only, use a simple query to avoid composite index issues
+    const collectionsQuery = query(
+      collection(db, COLLECTIONS.COLLECTIONS),
+      where('isPublic', '==', true),
+      orderBy('updatedAt', 'desc'),
+      ...(constraints.limitCount ? [limit(constraints.limitCount)] : [])
+    );
+    
+    const snapshot = await getDocs(collectionsQuery);
+    const collections = snapshot.docs.map(doc => doc.data() as Collection);
+    
+    // Handle client-side sorting if needed for other fields
+    if (constraints.orderByField && constraints.orderByField !== 'updatedAt') {
+      collections.sort((a, b) => {
+        const aVal = (a as any)[constraints.orderByField!] || 0;
+        const bVal = (b as any)[constraints.orderByField!] || 0;
+        return constraints.orderDirection === 'asc' ? aVal - bVal : bVal - aVal;
+      });
+    }
+    
+    return collections;
+  } catch (error) {
+    console.error('Error fetching collections:', error);
+    // Fallback to basic query if there are still issues
+    try {
+      const basicQuery = query(
+        collection(db, COLLECTIONS.COLLECTIONS),
+        where('isPublic', '==', true),
+        limit(constraints.limitCount || 20)
+      );
+      const snapshot = await getDocs(basicQuery);
+      return snapshot.docs.map(doc => doc.data() as Collection);
+    } catch (fallbackError) {
+      console.error('Fallback query also failed:', fallbackError);
+      return [];
+    }
+  }
 };

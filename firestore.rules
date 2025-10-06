@@ -46,15 +46,15 @@ service cloud.firestore {
     match /collections/{collectionId} {
       // Anyone can read public collections
       allow read: if resource.data.isPublic == true || 
-                     isOwner(resource.data.authorId) || 
+                     isOwner(resource.data.userId) || 
                      isAdmin();
       
       // Only authenticated users can create collections
       allow create: if isSignedIn() && 
-                       request.resource.data.authorId == request.auth.uid;
+                       request.resource.data.userId == request.auth.uid;
       
       // Only owner or admin can update/delete
-      allow update, delete: if isOwner(resource.data.authorId) || isAdmin();
+      allow update, delete: if isOwner(resource.data.userId) || isAdmin();
     }
 
     // Comments
@@ -63,6 +63,41 @@ service cloud.firestore {
       allow create: if isSignedIn() && 
                        request.resource.data.authorId == request.auth.uid;
       allow update, delete: if isOwner(resource.data.authorId) || isAdmin();
+    }
+
+    // User Activities
+    match /userActivities/{activityId} {
+      // Users can read their own activities, admins can read all
+      allow read: if isOwner(resource.data.userId) || isAdmin();
+      
+      // Users can create their own activities
+      allow create: if isSignedIn() && 
+                       request.resource.data.userId == request.auth.uid;
+      
+      // Only owner or admin can update/delete
+      allow update, delete: if isOwner(resource.data.userId) || isAdmin();
+    }
+
+    // Favorites
+    match /favorites/{favoriteId} {
+      // Users can read their own favorites, admins can read all
+      allow read: if isOwner(resource.data.userId) || isAdmin();
+      
+      // Users can create their own favorites
+      allow create: if isSignedIn() && 
+                       request.resource.data.userId == request.auth.uid;
+      
+      // Only owner or admin can update/delete
+      allow update, delete: if isOwner(resource.data.userId) || isAdmin();
+    }
+
+    // Stats and aggregation data
+    match /stats/{statId} {
+      // Anyone can read stats
+      allow read: if true;
+      
+      // Only authenticated users can update stats
+      allow write: if isSignedIn();
     }
 
     // Admins collection (only admins can read/write)

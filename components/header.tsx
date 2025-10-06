@@ -19,6 +19,7 @@ import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
 import { LogoutDialog } from "@/components/logout-dialog"
 import { AuthModal } from "@/components/auth-modal"
 import { useAuth } from "@/contexts/auth-context"
+import ClientOnly from "@/components/client-only"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 
@@ -171,27 +172,28 @@ export function Header() {
             </Button>
 
             {/* Authentication State */}
-            {loading ? (
-              <div className="w-10 h-10 rounded-full bg-gray-200 animate-pulse"></div>
-            ) : user ? (
-              /* Authenticated User Menu */
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" className="hidden sm:flex relative h-10 w-10 rounded-full hover:ring-4 hover:ring-purple-500/20 transition-all duration-300 group" aria-label="User menu">
-                    <Avatar className="h-10 w-10 ring-2 ring-purple-500/20 group-hover:ring-purple-500/50 transition-all duration-300">
-                      <AvatarImage src={getUserAvatar(user)} alt={user.displayName || user.email || 'User'} />
-                      <AvatarFallback className="bg-gradient-to-br from-purple-600 via-blue-600 to-purple-600 text-white text-sm font-semibold">
-                        {getUserInitials(user)}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div className="absolute -top-1 -right-1">
-                      <span className="relative flex h-3 w-3">
-                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
-                        <span className="relative inline-flex rounded-full h-3 w-3 bg-green-500 border-2 border-background"></span>
-                      </span>
-                    </div>
-                  </Button>
-                </DropdownMenuTrigger>
+            <ClientOnly fallback={<div className="w-10 h-10 rounded-full bg-gray-200 animate-pulse"></div>}>
+              {loading ? (
+                <div className="w-10 h-10 rounded-full bg-gray-200 animate-pulse"></div>
+              ) : user ? (
+                /* Authenticated User Menu */
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" className="hidden sm:flex relative h-10 w-10 rounded-full hover:ring-4 hover:ring-purple-500/20 transition-all duration-300 group" aria-label="User menu">
+                      <Avatar className="h-10 w-10 ring-2 ring-purple-500/20 group-hover:ring-purple-500/50 transition-all duration-300">
+                        <AvatarImage src={getUserAvatar(user)} alt={user.displayName || user.email || 'User'} />
+                        <AvatarFallback className="bg-gradient-to-br from-purple-600 via-blue-600 to-purple-600 text-white text-sm font-semibold">
+                          {getUserInitials(user)}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div className="absolute -top-1 -right-1">
+                        <span className="relative flex h-3 w-3">
+                          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+                          <span className="relative inline-flex rounded-full h-3 w-3 bg-green-500 border-2 border-background"></span>
+                        </span>
+                      </div>
+                    </Button>
+                  </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-72 animate-in fade-in slide-in-from-top-2 duration-200 border-purple-500/20 shadow-xl">
                   <DropdownMenuLabel className="font-normal p-4">
                     <div className="flex items-center space-x-3">
@@ -250,25 +252,26 @@ export function Header() {
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
-            ) : (
-              /* Unauthenticated State */
-              <div className="hidden sm:flex items-center gap-2">
-                <Button 
-                  variant="ghost" 
-                  onClick={() => handleAuthClick('signin')}
-                  className="text-gray-700 dark:text-gray-300 hover:text-purple-600 dark:hover:text-purple-400"
-                >
-                  <LogIn className="h-4 w-4 mr-2" />
-                  Sign In
-                </Button>
-                <Button 
-                  onClick={() => handleAuthClick('signup')}
-                  className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white"
-                >
-                  Get Started
-                </Button>
-              </div>
-            )}
+              ) : (
+                /* Unauthenticated State */
+                <div className="hidden sm:flex items-center gap-2">
+                  <Button 
+                    variant="ghost" 
+                    onClick={() => handleAuthClick('signin')}
+                    className="text-gray-700 dark:text-gray-300 hover:text-purple-600 dark:hover:text-purple-400"
+                  >
+                    <LogIn className="h-4 w-4 mr-2" />
+                    Sign In
+                  </Button>
+                  <Button 
+                    onClick={() => handleAuthClick('signup')}
+                    className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white"
+                  >
+                    Get Started
+                  </Button>
+                </div>
+              )}
+            </ClientOnly>
 
             {/* Enhanced Mobile Menu */}
             <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
@@ -318,7 +321,16 @@ export function Header() {
                   </div>
 
                   <div className="border-t border-purple-500/10 pt-4 mt-4 space-y-2">
-                    {user ? (
+                    <ClientOnly fallback={
+                      <div className="px-4 py-3">
+                        <div className="w-full h-10 rounded-lg bg-gray-200 animate-pulse"></div>
+                      </div>
+                    }>
+                      {loading ? (
+                        <div className="px-4 py-3">
+                          <div className="w-full h-10 rounded-lg bg-gray-200 animate-pulse"></div>
+                        </div>
+                      ) : user ? (
                       <>
                         <Link
                           href="/profile"
@@ -378,7 +390,8 @@ export function Header() {
                           Get Started
                         </button>
                       </>
-                    )}
+                      )}
+                    </ClientOnly>
                   </div>
                 </nav>
               </SheetContent>

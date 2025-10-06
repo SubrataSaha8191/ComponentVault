@@ -1,13 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server';
 import {
-  createCollection,
   getUserCollections,
   getCollectionById,
   updateCollection,
   deleteCollection,
   addComponentToCollection,
   removeComponentFromCollection,
+  getAllPublicCollections,
 } from '@/lib/firebase/firestore';
+import { adminDb, adminAuth } from '@/lib/firebase/admin';
+import * as admin from 'firebase-admin';
 
 // GET - Fetch collections
 export async function GET(request: NextRequest) {
@@ -15,6 +17,10 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const id = searchParams.get('id');
     const userId = searchParams.get('userId');
+    const type = searchParams.get('type');
+    const limit = searchParams.get('limit');
+    const orderBy = searchParams.get('orderBy');
+    const order = searchParams.get('order') as 'asc' | 'desc';
 
     // Fetch single collection by ID
     if (id) {
@@ -29,15 +35,20 @@ export async function GET(request: NextRequest) {
     }
 
     // Fetch user collections
-    if (userId) {
+    if (userId && type === 'user') {
       const collections = await getUserCollections(userId);
       return NextResponse.json(collections);
     }
 
-    return NextResponse.json(
-      { error: 'ID or User ID is required' },
-      { status: 400 }
-    );
+    // Fetch all public collections (with optional user private collections)
+    const collections = await getAllPublicCollections({
+      limitCount: limit ? parseInt(limit) : undefined,
+      orderByField: orderBy || 'updatedAt',
+      orderDirection: order || 'desc',
+      userId: userId || undefined,
+    });
+
+    return NextResponse.json(collections);
   } catch (error) {
     console.error('Error fetching collections:', error);
     return NextResponse.json(
@@ -51,40 +62,94 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const data = await request.json();
-    const { name, description, userId, userName, isPublic, coverImage } = data;
+    console.log('Received collection data:', data);
 
-    if (!name || !userId || !userName) {
+    // Verify Firebase ID token from Authorization header
+    const authHeader = request.headers.get('authorization') || '';
+    const idToken = authHeader.startsWith('Bearer ')
+      ? authHeader.substring('Bearer '.length)
+      : null;
+
+    if (!idToken) {
       return NextResponse.json(
-        { error: 'Missing required fields' },
+        { error: 'Unauthorized: missing ID token' },
+        { status: 401 }
+      );
+    }
+
+    let decoded;
+    try {
+      decoded = await adminAuth.verifyIdToken(idToken);
+    } catch (e) {
+      console.error('Failed to verify ID token', e);
+      return NextResponse.json(
+        { error: 'Unauthorized: invalid ID token' },
+        { status: 401 }
+      );
+    }
+
+    const uid = decoded.uid;
+    const { name, description, userName, isPublic, coverImage, tags } = data;
+
+    if (!name) {
+      return NextResponse.json(
+        { error: 'Missing required field: name' },
         { status: 400 }
       );
     }
 
-    const collectionId = await createCollection({
+    // Build the document, enforce userId from token
+    const docRef = adminDb.collection('collections').doc();
+    const now = admin.firestore.FieldValue.serverTimestamp();
+    const collectionPayload: Record<string, any> = {
+      id: docRef.id,
       name,
       description: description || '',
-      userId,
-      userName,
+      userId: uid,
+      userName: userName || decoded.name || decoded.email || 'Anonymous',
       componentIds: [],
       isPublic: isPublic ?? true,
-      coverImage: coverImage || undefined,
       likes: 0,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    });
+      createdAt: now,
+      updatedAt: now,
+    };
+
+    if (coverImage) collectionPayload.coverImage = coverImage;
+    if (Array.isArray(tags)) collectionPayload.tags = tags;
+
+    await docRef.set(collectionPayload, { merge: true });
+
+    // Best-effort activity log; do not fail if it errors
+    try {
+      const activityRef = adminDb.collection('userActivities').doc();
+      await activityRef.set({
+        id: activityRef.id,
+        userId: uid,
+        type: 'collection',
+        targetId: docRef.id,
+        targetType: 'collection',
+        description: `Created collection: ${name}`,
+        createdAt: now,
+      });
+    } catch (e) {
+      console.warn('Activity creation failed (non-fatal):', e);
+    }
+
+    console.log('Collection created successfully with ID:', docRef.id);
 
     return NextResponse.json(
       {
         success: true,
-        collectionId,
+        collectionId: docRef.id,
         message: 'Collection created successfully',
       },
       { status: 201 }
     );
   } catch (error) {
     console.error('Error creating collection:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     return NextResponse.json(
-      { error: 'Failed to create collection' },
+      { error: 'Failed to create collection', details: errorMessage },
       { status: 500 }
     );
   }

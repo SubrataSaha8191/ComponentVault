@@ -81,6 +81,7 @@ import { Component, Collection } from "@/lib/firebase/types"
 import debugFirebase from "@/lib/firebase/debug"
 import Link from "next/link"
 import { toast } from "sonner"
+import ClientOnly from "@/components/client-only"
 
 // Define Activity interface locally since it's causing import conflicts
 interface Activity {
@@ -122,7 +123,6 @@ interface UploadResult {
   deleteUrl?: string
 }
 
-// Firebase helper functions - Updated to avoid index requirements
 const getUserComponents = async (userId: string): Promise<Component[]> => {
   try {
     // Use simple query without orderBy to avoid index requirement
@@ -153,7 +153,7 @@ const getUserCollections = async (userId: string): Promise<Collection[]> => {
     // Use simple query without orderBy to avoid index requirement
     const q = query(
       collection(db, "collections"),
-      where("authorId", "==", userId)
+      where("userId", "==", userId)
     )
     const querySnapshot = await getDocs(q)
     const collections = querySnapshot.docs.map(doc => ({
@@ -169,6 +169,74 @@ const getUserCollections = async (userId: string): Promise<Collection[]> => {
     })
   } catch (error) {
     console.error("Error fetching user collections:", error)
+    return []
+  }
+}
+
+const getUserActivities = async (userId: string): Promise<Activity[]> => {
+  try {
+    // Use simple query without orderBy to avoid index requirement
+    const q = query(
+      collection(db, "userActivities"),
+      where("userId", "==", userId),
+      limit(20)
+    )
+    const querySnapshot = await getDocs(q)
+    const activities = querySnapshot.docs.map(doc => ({
+      id: doc.id,
+      ...doc.data(),
+      createdAt: doc.data().createdAt?.toDate() || new Date()
+    } as Activity))
+    
+    // Sort manually by createdAt descending
+    return activities.sort((a, b) => {
+      const aDate = a.createdAt instanceof Date ? a.createdAt : new Date(a.createdAt)
+      const bDate = b.createdAt instanceof Date ? b.createdAt : new Date(b.createdAt)
+      return bDate.getTime() - aDate.getTime()
+    })
+  } catch (error) {
+    console.error("Error fetching user activities:", error)
+    return []
+  }
+}
+
+const getUserFavorites = async (userId: string): Promise<Component[]> => {
+  try {
+    // Get user's favorite component IDs
+    const favoritesQuery = query(
+      collection(db, "favorites"), 
+      where("userId", "==", userId)
+    )
+    const favoritesSnapshot = await getDocs(favoritesQuery)
+    const favoriteComponentIds = favoritesSnapshot.docs.map(doc => doc.data().componentId)
+    
+    if (favoriteComponentIds.length === 0) {
+      return []
+    }
+    
+    // Get favorite components - we'll need to query in batches due to Firestore's 'in' limit
+    const favorites: Component[] = []
+    const batchSize = 10 // Firestore 'in' limit
+    
+    for (let i = 0; i < favoriteComponentIds.length; i += batchSize) {
+      const batch = favoriteComponentIds.slice(i, i + batchSize)
+      const componentsQuery = query(
+        collection(db, "components"),
+        where("__name__", "in", batch)
+      )
+      const componentsSnapshot = await getDocs(componentsQuery)
+      
+      componentsSnapshot.docs.forEach(doc => {
+        favorites.push({
+          id: doc.id,
+          ...doc.data()
+        } as Component)
+      })
+    }
+    
+    return favorites
+  } catch (error) {
+    console.error("Error fetching user favorites:", error)
     return []
   }
 }
@@ -330,6 +398,14 @@ const uploadComponentImages = async (file: File, folderPath: string): Promise<Up
 }
 
 export default function DashboardPage() {
+  return (
+    <ClientOnly>
+      <DashboardContent />
+    </ClientOnly>
+  )
+}
+
+function DashboardContent() {
   const [activeTab, setActiveTab] = useState("my-components")
   const { user } = useAuth()
   const [loading, setLoading] = useState(true)
@@ -368,22 +444,13 @@ export default function DashboardPage() {
         const collections = await getUserCollections(user.uid)
         setUserCollections(collections)
 
-        // Load user activities from Firebase
-        const activitiesRef = collection(db, 'userActivities')
-        const activitiesQuery = query(
-          activitiesRef, 
-          where('userId', '==', user.uid),
-          orderBy('createdAt', 'desc'),
-          limit(20)
-        )
-        const activitiesSnapshot = await getDocs(activitiesQuery)
-        const activities = activitiesSnapshot.docs.map(doc => ({
-          id: doc.id,
-          ...doc.data(),
-          createdAt: doc.data().createdAt?.toDate() || new Date()
-        } as Activity))
-        
+        // Load user activities
+        const activities = await getUserActivities(user.uid)
         setUserActivities(activities)
+
+        // Load user favorites
+        const favoriteComponents = await getUserFavorites(user.uid)
+        setFavorites(favoriteComponents)
 
         // Calculate user stats from loaded data
         const stats: UserStats = {
@@ -408,34 +475,6 @@ export default function DashboardPage() {
           likes: comp.stats?.likes || comp.likes || 0
         }))
         setAnalyticsData(analytics)
-
-        // Load favorites (components liked by user)
-        const favoritesRef = collection(db, 'favorites')
-        const favoritesQuery = query(favoritesRef, where('userId', '==', user.uid))
-        const favoritesSnapshot = await getDocs(favoritesQuery)
-        const favoriteComponentIds = favoritesSnapshot.docs.map(doc => doc.data().componentId)
-        
-        if (favoriteComponentIds.length > 0) {
-          const componentsRef = collection(db, 'components')
-          const favoritesComponents: Component[] = []
-          
-          // Get favorite components in batches
-          for (const componentId of favoriteComponentIds) {
-            const componentQuery = query(componentsRef, where('__name__', '==', componentId))
-            const componentSnapshot = await getDocs(componentQuery)
-            if (!componentSnapshot.empty) {
-              componentSnapshot.docs.forEach(doc => {
-                favoritesComponents.push({
-                  id: doc.id,
-                  ...doc.data()
-                } as Component)
-              })
-            }
-          }
-          setFavorites(favoritesComponents)
-        } else {
-          setFavorites([])
-        }
 
       } catch (error) {
         console.error('Error loading user data:', error)
