@@ -17,8 +17,10 @@ service cloud.firestore {
 
     // Components collection
     match /components/{componentId} {
-      // Anyone can read published components
+      // Allow reading published OR public components without authentication
+      // Allow owners and admins to read all their components
       allow read: if resource.data.isPublished == true || 
+                     resource.data.isPublic == true ||
                      isOwner(resource.data.authorId) || 
                      isAdmin();
       

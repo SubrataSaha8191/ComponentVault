@@ -26,7 +26,7 @@ import { toast } from "sonner"
 import { useRouter } from "next/navigation"
 
 export default function MyComponentsPage() {
-  const { user } = useAuth()
+  const { user, loading: authLoading } = useAuth()
   const router = useRouter()
   const [searchQuery, setSearchQuery] = useState("")
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid")
@@ -41,6 +41,11 @@ export default function MyComponentsPage() {
   // Fetch user's uploaded components and saved components
   useEffect(() => {
     const fetchData = async () => {
+      // Wait for auth to initialize
+      if (authLoading) {
+        return
+      }
+
       if (!user) {
         router.push('/auth/sign-in')
         return
@@ -100,7 +105,7 @@ export default function MyComponentsPage() {
     }
 
     fetchData()
-  }, [user, router])
+  }, [user, router, authLoading])
 
   const handleCopy = async (component: Component) => {
     try {

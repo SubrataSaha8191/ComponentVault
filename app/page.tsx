@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import { useRouter } from "next/navigation"
 import { 
   Search, Sparkles, Eye, Accessibility, Layers, Star, Download, Heart, Copy, Check,
   Zap, Code, Palette, Shield, TrendingUp, Users, ArrowRight, PlayCircle,
@@ -213,18 +214,35 @@ export default function ComponentVault() {
   const [shouldShowWelcomeModal, setShouldShowWelcomeModal] = useState(false)
   
   const { user } = useAuth()
+  const router = useRouter()
 
-  // Check if user should see welcome modal on first visit
+  const handleSearch = (e: React.FormEvent, searchValue: string) => {
+    e.preventDefault()
+    const trimmedValue = searchValue.trim()
+    if (trimmedValue) {
+      router.push(`/browse?q=${encodeURIComponent(trimmedValue)}`)
+    }
+  }
+
+  // Check if user should see welcome modal on first visit - ONLY runs once
   useEffect(() => {
     const hasVisited = localStorage.getItem('hasVisited')
-    if (!hasVisited && !user) {
+    const hasSeenAuthModal = localStorage.getItem('hasSeenAuthModal')
+    
+    // Only show modal if user has never visited AND hasn't seen the auth modal before
+    if (!hasVisited && !hasSeenAuthModal) {
       const timer = setTimeout(() => {
         setShouldShowWelcomeModal(true)
         localStorage.setItem('hasVisited', 'true')
+        localStorage.setItem('hasSeenAuthModal', 'true')
       }, 2000) // Show after 2 seconds
       return () => clearTimeout(timer)
+    } else if (!hasVisited) {
+      // Mark as visited even if they've seen the modal before
+      localStorage.setItem('hasVisited', 'true')
     }
-  }, [user])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []) // Empty dependency array - only runs ONCE on mount
 
   // Animated counter effect
   useEffect(() => {
@@ -284,81 +302,81 @@ export default function ComponentVault() {
         {/* Premium Shimmer Effect */}
         <div className="absolute inset-0 bg-gradient-to-r from-transparent via-amber-400/5 to-transparent animate-shimmer" style={{ backgroundSize: "200% 100%" }} />
         
-        <div className="relative mx-auto max-w-7xl px-4 py-32 sm:px-6 lg:px-8">
-          <div className="text-center space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-1000">
+        <div className="relative mx-auto max-w-7xl px-4 py-16 sm:py-24 md:py-32 sm:px-6 lg:px-8">
+          <div className="text-center space-y-6 sm:space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-1000">
             {/* Luxury Badge */}
-            <div className="inline-flex items-center gap-2 px-6 py-2 rounded-full bg-gradient-to-r from-amber-500/20 to-yellow-500/20 backdrop-blur-sm border border-amber-400/30 shadow-lg shadow-amber-500/20 animate-in fade-in duration-500">
-              <Sparkles className="h-4 w-4 text-amber-300 animate-pulse" />
-              <span className="text-sm font-semibold bg-gradient-to-r from-amber-200 via-yellow-100 to-amber-200 bg-clip-text text-transparent">
+            <div className="inline-flex items-center gap-2 px-4 sm:px-6 py-2 rounded-full bg-gradient-to-r from-amber-500/20 to-yellow-500/20 backdrop-blur-sm border border-amber-400/30 shadow-lg shadow-amber-500/20 animate-in fade-in duration-500">
+              <Sparkles className="h-3 w-3 sm:h-4 sm:w-4 text-amber-300 animate-pulse" />
+              <span className="text-xs sm:text-sm font-semibold bg-gradient-to-r from-amber-200 via-yellow-100 to-amber-200 bg-clip-text text-transparent">
                 Trusted by 50,000+ developers worldwide
               </span>
             </div>
             
             {/* Main Heading with Premium White-Gold Texture */}
-            <h1 className="text-balance text-6xl font-bold tracking-tight sm:text-7xl lg:text-8xl animate-in fade-in duration-700 delay-100">
+            <h1 className="text-balance text-4xl sm:text-5xl md:text-6xl lg:text-7xl xl:text-8xl font-bold tracking-tight animate-in fade-in duration-700 delay-100">
               <span className="bg-gradient-to-r from-gray-100 via-gray-50 to-gray-100 bg-clip-text text-transparent">
                 Build Faster with
               </span>
-              <span className="block mt-4 relative">
+              <span className="block mt-2 sm:mt-4 relative">
                 {/* White-Gold Luxury Text with Multiple Layers */}
                 <span className="absolute inset-0 bg-gradient-to-r from-amber-200 via-yellow-100 to-amber-200 bg-clip-text text-transparent blur-sm opacity-50"></span>
                 <span className="relative bg-gradient-to-r from-amber-300 via-yellow-50 to-amber-300 bg-clip-text text-transparent animate-gradient-x" style={{ backgroundSize: "200% auto" }}>
                   Premium
                 </span>
-                <span className="relative ml-4 bg-gradient-to-r from-gray-100 via-white to-gray-100 bg-clip-text text-transparent">
+                <span className="relative ml-2 sm:ml-4 bg-gradient-to-r from-gray-100 via-white to-gray-100 bg-clip-text text-transparent">
                   Components
                 </span>
               </span>
             </h1>
             
             {/* Subtitle with Elegant Color */}
-            <p className="mt-6 text-pretty text-xl sm:text-2xl text-gray-300 max-w-3xl mx-auto leading-relaxed animate-in fade-in duration-700 delay-200">
+            <p className="mt-4 sm:mt-6 text-pretty text-base sm:text-lg md:text-xl lg:text-2xl text-gray-300 max-w-3xl mx-auto leading-relaxed px-4 animate-in fade-in duration-700 delay-200">
               Discover <span className="text-amber-300 font-semibold">1,200+</span> production-ready UI components. Copy, customize, and ship beautiful interfaces in minutes, not days.
             </p>
 
             {/* Search Bar - Luxury Gold Glow */}
-            <div className="mx-auto mt-12 max-w-3xl animate-in fade-in duration-700 delay-300">
-              <div className="relative group">
+            <div className="mx-auto mt-8 sm:mt-12 max-w-3xl px-4 animate-in fade-in duration-700 delay-300">
+              <form onSubmit={(e) => handleSearch(e, searchQuery)} className="relative group">
                 {/* Gold Glow Effect */}
                 <div className="absolute inset-0 bg-gradient-to-r from-amber-400/40 via-yellow-300/40 to-amber-400/40 rounded-2xl blur-2xl opacity-40 group-hover:opacity-60 transition-opacity duration-500" />
                 <div className="absolute inset-0 bg-gradient-to-r from-amber-500/20 to-yellow-500/20 rounded-2xl blur-xl" />
                 
                 <div className="relative">
-                  <Search className="absolute left-5 top-1/2 h-6 w-6 -translate-y-1/2 text-amber-400 z-10" />
+                  <Search className="absolute left-3 sm:left-5 top-1/2 h-5 w-5 sm:h-6 sm:w-6 -translate-y-1/2 text-amber-400 z-10" />
                   <Input
                     type="text"
-                    placeholder="Search 1,200+ luxury components..."
-                    className="h-16 pl-14 pr-32 text-lg bg-white/95 dark:bg-gray-800/95 dark:text-white text-gray-900 placeholder:text-gray-400 dark:placeholder:text-gray-500 border border-amber-400/30 rounded-2xl shadow-2xl shadow-amber-500/20 focus:ring-4 focus:ring-amber-500/30 focus:border-amber-500/50 transition-all backdrop-blur-sm"
+                    placeholder="Search components..."
+                    className="h-12 sm:h-14 md:h-16 pl-10 sm:pl-14 pr-24 sm:pr-32 text-sm sm:text-base md:text-lg bg-white/95 dark:bg-gray-800/95 dark:text-white text-gray-900 placeholder:text-gray-400 dark:placeholder:text-gray-500 border border-amber-400/30 rounded-xl sm:rounded-2xl shadow-2xl shadow-amber-500/20 focus:ring-4 focus:ring-amber-500/30 focus:border-amber-500/50 transition-all backdrop-blur-sm"
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                   />
                   <Button 
-                    size="lg" 
-                    className="absolute right-2 top-1/2 -translate-y-1/2 bg-gradient-to-r from-amber-500 to-yellow-500 hover:from-amber-600 hover:to-yellow-600 text-white font-semibold px-6 shadow-lg transition-all duration-300"
+                    type="submit"
+                    size="sm"
+                    className="absolute right-1 sm:right-2 top-1/2 -translate-y-1/2 bg-gradient-to-r from-amber-500 to-yellow-500 hover:from-amber-600 hover:to-yellow-600 text-white font-semibold px-3 sm:px-6 h-9 sm:h-10 md:h-12 shadow-lg transition-all duration-300 text-xs sm:text-sm"
                   >
-                    <Sparkles className="h-5 w-5 mr-2" />
-                    Search
+                    <Sparkles className="h-4 w-4 sm:h-5 sm:w-5 sm:mr-2" />
+                    <span className="hidden sm:inline">Search</span>
                   </Button>
                 </div>
-              </div>
+              </form>
             </div>
 
             {/* Premium CTA Buttons */}
-            <div className="mt-12 flex flex-wrap items-center justify-center gap-4 animate-in fade-in duration-700 delay-400">
+            <div className="mt-8 sm:mt-12 flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4 px-4 animate-in fade-in duration-700 delay-400">
               <Button 
                 size="lg" 
                 onClick={handleGetStarted}
-                className="relative overflow-hidden bg-gradient-to-r from-amber-400 to-yellow-500 hover:from-amber-500 hover:to-yellow-600 text-black font-bold text-lg px-10 py-6 rounded-xl shadow-2xl shadow-amber-500/30 hover:shadow-3xl hover:shadow-amber-500/40 hover:scale-105 transition-all duration-300 group"
+                className="relative overflow-hidden w-full sm:w-auto bg-gradient-to-r from-amber-400 to-yellow-500 hover:from-amber-500 hover:to-yellow-600 text-black font-bold text-base sm:text-lg px-8 sm:px-10 py-5 sm:py-6 rounded-xl shadow-2xl shadow-amber-500/30 hover:shadow-3xl hover:shadow-amber-500/40 hover:scale-105 transition-all duration-300 group"
               >
                 <span className="absolute inset-0 bg-gradient-to-r from-white/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></span>
-                <Eye className="h-5 w-5 mr-2 relative z-10" />
                 <span className="relative z-10">Get Started</span>
               </Button>
-              <Link href="/demo">
+              <Link href="/demo" className="w-full sm:w-auto">
                 <Button
                   size="lg"
                   variant="outline"
-                  className="relative overflow-hidden border-2 border-amber-400/50 text-amber-100 hover:bg-amber-500/10 hover:border-amber-400 text-lg px-10 py-6 rounded-xl bg-white/5 backdrop-blur-sm shadow-xl shadow-amber-500/10 hover:shadow-2xl hover:shadow-amber-500/20 hover:scale-105 transition-all duration-300 group"
+                  className="relative overflow-hidden w-full border-2 border-amber-400/50 text-amber-100 hover:bg-amber-500/10 hover:border-amber-400 text-base sm:text-lg px-8 sm:px-10 py-5 sm:py-6 rounded-xl bg-white/5 backdrop-blur-sm shadow-xl shadow-amber-500/10 hover:shadow-2xl hover:shadow-amber-500/20 hover:scale-105 transition-all duration-300 group"
                 >
                   <PlayCircle className="h-5 w-5 mr-2" />
                   Watch Demo
@@ -367,18 +385,18 @@ export default function ComponentVault() {
             </div>
 
             {/* Luxury Trust Badges */}
-            <div className="mt-16 flex flex-wrap items-center justify-center gap-8 text-amber-200/80 animate-in fade-in duration-700 delay-500">
+            <div className="mt-10 sm:mt-16 flex flex-col sm:flex-row items-center justify-center gap-4 sm:gap-8 text-amber-200/80 px-4 animate-in fade-in duration-700 delay-500">
               <div className="flex items-center gap-2">
-                <CheckCircle className="h-5 w-5" />
-                <span className="text-sm">No Credit Card Required</span>
+                <CheckCircle className="h-4 w-4 sm:h-5 sm:w-5" />
+                <span className="text-xs sm:text-sm">No Credit Card Required</span>
               </div>
               <div className="flex items-center gap-2">
-                <CheckCircle className="h-5 w-5" />
-                <span className="text-sm">Free Forever Plan</span>
+                <CheckCircle className="h-4 w-4 sm:h-5 sm:w-5" />
+                <span className="text-xs sm:text-sm">Free Forever Plan</span>
               </div>
               <div className="flex items-center gap-2">
-                <CheckCircle className="h-5 w-5" />
-                <span className="text-sm">Cancel Anytime</span>
+                <CheckCircle className="h-4 w-4 sm:h-5 sm:w-5" />
+                <span className="text-xs sm:text-sm">Cancel Anytime</span>
               </div>
             </div>
           </div>
@@ -393,9 +411,9 @@ export default function ComponentVault() {
       </section>
 
       {/* Luxury Stats Section */}
-      <section className="py-20 px-4 sm:px-6 lg:px-8 bg-gradient-to-b from-background via-slate-50 to-background dark:from-slate-900 dark:via-slate-900 dark:to-slate-900 overflow-hidden">
+      <section className="py-12 sm:py-16 md:py-20 px-4 sm:px-6 lg:px-8 bg-gradient-to-b from-background via-slate-50 to-background dark:from-slate-900 dark:via-slate-900 dark:to-slate-900 overflow-hidden">
         <div className="mx-auto max-w-7xl">
-          <div className="grid gap-10 sm:grid-cols-2 lg:grid-cols-4 p-2">
+          <div className="grid gap-4 sm:gap-6 md:gap-8 lg:gap-10 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 p-2">
             {stats.map((stat, index) => (
               <div
                 key={index}
@@ -427,15 +445,15 @@ export default function ComponentVault() {
       </section>
 
       {/* Features Section - Enhanced */}
-      <section className="py-24 px-4 sm:px-6 lg:px-8 bg-background">
+      <section className="py-12 sm:py-16 md:py-24 px-4 sm:px-6 lg:px-8 bg-background">
         <div className="mx-auto max-w-7xl">
           {/* Luxury Section Header */}
-          <div className="text-center mb-16 animate-in fade-in slide-in-from-bottom-4 duration-700">
-            <Badge className="mb-4 bg-gradient-to-r from-green-400 via-blue-400 to-cyan-400 text-white dark:from-green-500 dark:via-blue-500 dark:to-cyan-500 dark:text-white border-0 px-6 py-2 shadow-lg shadow-cyan-500/30">
+          <div className="text-center mb-10 sm:mb-12 md:mb-16 animate-in fade-in slide-in-from-bottom-4 duration-700">
+            <Badge className="mb-4 bg-gradient-to-r from-green-400 via-blue-400 to-cyan-400 text-white dark:from-green-500 dark:via-blue-500 dark:to-cyan-500 dark:text-white border-0 px-4 sm:px-6 py-1.5 sm:py-2 text-xs sm:text-sm shadow-lg shadow-cyan-500/30">
               <Sparkles className="inline h-3 w-3 mr-1" />
               Why ComponentVault
             </Badge>
-            <h2 className="text-4xl md:text-5xl font-bold mb-4">
+            <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-3 sm:mb-4 px-4">
               <span className="bg-gradient-to-r from-gray-900 to-gray-700 dark:from-gray-100 dark:to-gray-300 bg-clip-text text-transparent">
                 Everything you need to
               </span>
@@ -443,13 +461,13 @@ export default function ComponentVault() {
                 build amazing products
               </span>
             </h2>
-            <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
+            <p className="text-base sm:text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto px-4">
               <span className="font-semibold text-amber-600 dark:text-amber-400">Premium</span> components with enterprise-grade quality. Built by experts, trusted by professionals.
             </p>
           </div>
 
           {/* Features Grid */}
-          <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
+          <div className="grid gap-4 sm:gap-6 md:gap-8 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
             {enhancedFeatures.map((feature, index) => (
               <Card
                 key={index}
@@ -475,24 +493,24 @@ export default function ComponentVault() {
       </section>
 
       {/* Testimonials Section */}
-      <section className="py-24 px-4 sm:px-6 lg:px-8 bg-gradient-to-b from-muted/30 to-background">
+      <section className="py-12 sm:py-16 md:py-24 px-4 sm:px-6 lg:px-8 bg-gradient-to-b from-muted/30 to-background">
         <div className="mx-auto max-w-7xl">
           {/* Section Header */}
-          <div className="text-center mb-16 animate-in fade-in slide-in-from-bottom-4 duration-700">
-            <Badge className="mb-4 bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-300 px-4 py-2">
-              <Trophy className="h-4 w-4 mr-2 inline" />
+          <div className="text-center mb-10 sm:mb-12 md:mb-16 animate-in fade-in slide-in-from-bottom-4 duration-700">
+            <Badge className="mb-4 bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-300 px-3 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm">
+              <Trophy className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2 inline" />
               Loved by Developers
             </Badge>
-            <h2 className="text-4xl md:text-5xl font-bold mb-4">
+            <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-3 sm:mb-4 px-4">
               Join 50,000+ happy developers
             </h2>
-            <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
+            <p className="text-base sm:text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto px-4">
               See what developers are saying about ComponentVault
             </p>
           </div>
 
           {/* Testimonials Grid */}
-          <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
+          <div className="grid gap-4 sm:gap-6 md:gap-8 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
             {testimonials.map((testimonial, index) => (
               <Card
                 key={index}
@@ -533,22 +551,22 @@ export default function ComponentVault() {
       </section>
 
       {/* Popular Components Section - Simplified */}
-      <section className="py-24 px-4 sm:px-6 lg:px-8 bg-background">
+      <section className="py-12 sm:py-16 md:py-24 px-4 sm:px-6 lg:px-8 bg-background">
         <div className="mx-auto max-w-7xl">
-          <div className="flex items-center justify-between mb-12">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 sm:gap-0 mb-8 sm:mb-10 md:mb-12">
             <div>
-              <h2 className="text-4xl font-bold mb-2">Popular Components</h2>
-              <p className="text-muted-foreground text-lg">Explore our most downloaded and highly rated components</p>
+              <h2 className="text-3xl sm:text-4xl font-bold mb-2">Popular Components</h2>
+              <p className="text-muted-foreground text-sm sm:text-base md:text-lg">Explore our most downloaded and highly rated components</p>
             </div>
             <Link href="/browse">
-              <Button size="lg" variant="outline" className="group">
+              <Button size="default" variant="outline" className="group w-full sm:w-auto">
                 View All
-                <ArrowRight className="h-5 w-5 ml-2 group-hover:translate-x-1 transition-transform" />
+                <ArrowRight className="h-4 w-4 sm:h-5 sm:w-5 ml-2 group-hover:translate-x-1 transition-transform" />
               </Button>
             </Link>
           </div>
 
-          <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
+          <div className="grid gap-4 sm:gap-6 md:gap-8 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
             {mockComponents.slice(0, 6).map((component, index) => (
               <Card
                 key={component.id}
@@ -631,7 +649,7 @@ export default function ComponentVault() {
       </section>
 
       {/* Luxury CTA Section - Final Call to Action */}
-      <section className="relative py-32 px-4 sm:px-6 lg:px-8 overflow-hidden">
+      <section className="relative py-16 sm:py-24 md:py-32 px-4 sm:px-6 lg:px-8 overflow-hidden">
         {/* Premium Dark Background with Gold Accents */}
         <div className="absolute inset-0 bg-gradient-to-br from-slate-900 via-gray-900 to-black" />
         <div className="absolute inset-0 bg-[url('/abstract-geometric-pattern.png')] opacity-5" />
@@ -644,12 +662,12 @@ export default function ComponentVault() {
         <div className="absolute bottom-20 right-10 w-[500px] h-[500px] bg-gradient-to-tl from-yellow-400/15 to-amber-300/10 rounded-full blur-3xl animate-float" style={{ animationDelay: "1s" }} />
         
         <div className="relative mx-auto max-w-4xl text-center text-white">
-          <div className="inline-flex items-center gap-2 px-6 py-2 rounded-full bg-gradient-to-r from-amber-500/20 to-yellow-500/20 backdrop-blur-sm border border-amber-400/30 mb-8 animate-bounce-subtle shadow-lg shadow-amber-500/20">
-            <Rocket className="h-5 w-5 text-amber-300" />
-            <span className="text-sm font-semibold bg-gradient-to-r from-amber-200 to-yellow-100 bg-clip-text text-transparent">Start building today</span>
+          <div className="inline-flex items-center gap-2 px-4 sm:px-6 py-2 rounded-full bg-gradient-to-r from-amber-500/20 to-yellow-500/20 backdrop-blur-sm border border-amber-400/30 mb-6 sm:mb-8 animate-bounce-subtle shadow-lg shadow-amber-500/20">
+            <Rocket className="h-4 w-4 sm:h-5 sm:w-5 text-amber-300" />
+            <span className="text-xs sm:text-sm font-semibold bg-gradient-to-r from-amber-200 to-yellow-100 bg-clip-text text-transparent">Start building today</span>
           </div>
           
-          <h2 className="text-5xl md:text-6xl font-bold mb-6">
+          <h2 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold mb-4 sm:mb-6 px-4">
             <span className="bg-gradient-to-r from-gray-100 via-white to-gray-100 bg-clip-text text-transparent">
               Ready to build something
             </span>
@@ -657,46 +675,46 @@ export default function ComponentVault() {
               amazing?
             </span>
           </h2>
-          <p className="text-xl text-gray-300 mb-12 max-w-2xl mx-auto leading-relaxed">
+          <p className="text-base sm:text-lg md:text-xl text-gray-300 mb-8 sm:mb-12 max-w-2xl mx-auto leading-relaxed px-4">
             Join <span className="text-amber-300 font-semibold">thousands</span> of developers who are already building faster with ComponentVault. Get started for free, no credit card required.
           </p>
           
-          <div className="flex flex-wrap items-center justify-center gap-4">
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4 px-4">
             <Button 
               size="lg" 
               onClick={handleGetStarted}
-              className="relative overflow-hidden bg-gradient-to-r from-amber-400 to-yellow-500 hover:from-amber-500 hover:to-yellow-600 text-black font-bold text-lg px-12 py-8 rounded-2xl shadow-2xl shadow-amber-500/30 hover:shadow-3xl hover:shadow-amber-500/50 hover:scale-105 transition-all duration-300 group"
+              className="relative overflow-hidden w-full sm:w-auto bg-gradient-to-r from-amber-400 to-yellow-500 hover:from-amber-500 hover:to-yellow-600 text-black font-bold text-base sm:text-lg px-8 sm:px-12 py-6 sm:py-8 rounded-xl sm:rounded-2xl shadow-2xl shadow-amber-500/30 hover:shadow-3xl hover:shadow-amber-500/50 hover:scale-105 transition-all duration-300 group"
             >
               <span className="absolute inset-0 bg-gradient-to-r from-white/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></span>
-              <Rocket className="h-6 w-6 mr-2 relative z-10" />
+              <Rocket className="h-5 w-5 sm:h-6 sm:w-6 mr-2 relative z-10" />
               <span className="relative z-10">Get Started Free</span>
             </Button>
-            <Link href="https://github.com/yourusername/componentvault" target="_blank">
+            <Link href="https://github.com/yourusername/componentvault" target="_blank" className="w-full sm:w-auto">
               <Button
                 size="lg"
                 variant="outline"
-                className="border-2 border-amber-400/50 text-amber-100 hover:bg-amber-500/10 hover:border-amber-400 text-lg px-12 py-8 rounded-2xl bg-white/5 backdrop-blur-sm shadow-2xl shadow-amber-500/10 hover:shadow-amber-500/20 hover:scale-105 transition-all duration-300 font-semibold"
+                className="w-full border-2 border-amber-400/50 text-amber-100 hover:bg-amber-500/10 hover:border-amber-400 text-base sm:text-lg px-8 sm:px-12 py-6 sm:py-8 rounded-xl sm:rounded-2xl bg-white/5 backdrop-blur-sm shadow-2xl shadow-amber-500/10 hover:shadow-amber-500/20 hover:scale-105 transition-all duration-300 font-semibold"
               >
-                <Github className="h-6 w-6 mr-2" />
+                <Github className="h-5 w-5 sm:h-6 sm:w-6 mr-2" />
                 View on GitHub
               </Button>
             </Link>
           </div>
           
-          <div className="mt-16 flex items-center justify-center gap-12 text-purple-200">
+          <div className="mt-10 sm:mt-12 md:mt-16 flex flex-col sm:flex-row items-center justify-center gap-6 sm:gap-8 md:gap-12 text-purple-200 px-4">
             <div className="text-center">
-              <div className="text-4xl font-bold mb-2">{counters.components.toLocaleString()}+</div>
-              <div className="text-sm">Components</div>
+              <div className="text-3xl sm:text-4xl font-bold mb-1 sm:mb-2">{counters.components.toLocaleString()}+</div>
+              <div className="text-xs sm:text-sm">Components</div>
             </div>
-            <div className="w-px h-12 bg-purple-400/30" />
+            <div className="hidden sm:block w-px h-12 bg-purple-400/30" />
             <div className="text-center">
-              <div className="text-4xl font-bold mb-2">{counters.developers.toLocaleString()}+</div>
-              <div className="text-sm">Developers</div>
+              <div className="text-3xl sm:text-4xl font-bold mb-1 sm:mb-2">{counters.developers.toLocaleString()}+</div>
+              <div className="text-xs sm:text-sm">Developers</div>
             </div>
-            <div className="w-px h-12 bg-purple-400/30" />
+            <div className="hidden sm:block w-px h-12 bg-purple-400/30" />
             <div className="text-center">
-              <div className="text-4xl font-bold mb-2">{(counters.downloads / 1000).toFixed(1)}M+</div>
-              <div className="text-sm">Downloads</div>
+              <div className="text-3xl sm:text-4xl font-bold mb-1 sm:mb-2">{(counters.downloads / 1000).toFixed(1)}M+</div>
+              <div className="text-xs sm:text-sm">Downloads</div>
             </div>
           </div>
         </div>

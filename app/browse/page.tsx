@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import { useSearchParams } from "next/navigation"
 import { Search, Eye, Star, Download, Heart, Copy, Check, X } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -124,12 +125,21 @@ const mockComponents = [
 ]
 
 export default function BrowsePage() {
-  const { user } = useAuth()
+  const { user, loading: authLoading } = useAuth()
+  const searchParams = useSearchParams()
   const [components, setComponents] = useState<Component[]>([])
   const [loading, setLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState("")
   const [selectedFrameworks, setSelectedFrameworks] = useState<string[]>([])
   const [sortBy, setSortBy] = useState("popular")
+  
+  // Initialize search query from URL parameter
+  useEffect(() => {
+    const query = searchParams.get('q')
+    if (query) {
+      setSearchQuery(query)
+    }
+  }, [searchParams])
   const [copiedId, setCopiedId] = useState<string | null>(null)
   const [favorites, setFavorites] = useState<string[]>([])
   const [accessibilityScore, setAccessibilityScore] = useState([75])
@@ -140,6 +150,11 @@ export default function BrowsePage() {
   // Fetch published components from Firestore
   useEffect(() => {
     const fetchComponents = async () => {
+      // Wait for auth to initialize
+      if (authLoading) {
+        return
+      }
+
       try {
         setLoading(true)
         console.log("Starting to fetch components...")
@@ -203,11 +218,13 @@ export default function BrowsePage() {
     }
 
     fetchComponents()
-  }, [])
+  }, [authLoading])
 
   // Fetch user's favorites
   useEffect(() => {
     const fetchFavorites = async () => {
+      // Wait for auth to be ready
+      if (authLoading) return
       if (!user) return
       
       try {
@@ -226,11 +243,11 @@ export default function BrowsePage() {
     }
 
     fetchFavorites()
-  }, [user])
+  }, [user, authLoading])
 
   // Add activity tracking function
   const trackActivity = async (type: string, componentId: string, description: string) => {
-    if (!user) return
+    if (authLoading || !user) return
     
     try {
       // Write to the secured collection per security rules

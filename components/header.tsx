@@ -15,13 +15,13 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
+import { Sheet, SheetContent, SheetTrigger, SheetTitle } from "@/components/ui/sheet"
 import { LogoutDialog } from "@/components/logout-dialog"
 import { AuthModal } from "@/components/auth-modal"
 import { useAuth } from "@/contexts/auth-context"
 import ClientOnly from "@/components/client-only"
 import Link from "next/link"
-import { usePathname } from "next/navigation"
+import { usePathname, useRouter } from "next/navigation"
 
 export function Header() {
   const [isSearchExpanded, setIsSearchExpanded] = useState(false)
@@ -29,9 +29,11 @@ export function Header() {
   const [logoutDialogOpen, setLogoutDialogOpen] = useState(false)
   const [authModalOpen, setAuthModalOpen] = useState(false)
   const [authModalTab, setAuthModalTab] = useState<'signin' | 'signup'>('signin')
+  const [searchQuery, setSearchQuery] = useState("")
   const { theme, setTheme } = useTheme()
   const { user, loading, signOut } = useAuth()
   const pathname = usePathname()
+  const router = useRouter()
 
   const toggleTheme = () => {
     setTheme(theme === "light" ? "dark" : "light")
@@ -40,6 +42,13 @@ export function Header() {
   const handleAuthClick = (tab: 'signin' | 'signup') => {
     setAuthModalTab(tab)
     setAuthModalOpen(true)
+  }
+
+  const handleSearch = (e: React.FormEvent<HTMLFormElement>, searchValue: string) => {
+    e.preventDefault()
+    if (searchValue.trim()) {
+      router.push(`/browse?q=${encodeURIComponent(searchValue.trim())}`)
+    }
   }
 
   const handleLogout = async () => {
@@ -103,12 +112,14 @@ export function Header() {
               isSearchExpanded ? "max-w-2xl" : ""
             }`}
           >
-            <div className="relative w-full group">
+            <form onSubmit={(e) => handleSearch(e, searchQuery)} className="relative w-full group">
               <Search className={`absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 transition-all duration-300 ${
                 isSearchExpanded ? "text-purple-600" : "text-muted-foreground"
               }`} />
               <Input
                 type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="Search 10,000+ components..."
                 className={`w-full pl-10 pr-4 transition-all duration-300 bg-muted/50 dark:bg-muted/30 border-transparent focus:border-purple-500/50 focus:ring-2 focus:ring-purple-500/20 dark:text-white text-gray-900 placeholder:text-gray-500 dark:placeholder:text-gray-400 ${
                   isSearchExpanded ? "shadow-lg shadow-purple-500/10" : ""
@@ -123,7 +134,7 @@ export function Header() {
                   </kbd>
                 </div>
               )}
-            </div>
+            </form>
           </div>
 
           {/* Enhanced Desktop Navigation */}
@@ -286,16 +297,22 @@ export function Header() {
                 </Button>
               </SheetTrigger>
               <SheetContent side="right" className="w-[300px] sm:w-[400px] border-l-purple-500/20">
+                <SheetTitle className="sr-only">Navigation Menu</SheetTitle>
                 <nav className="flex flex-col gap-2 mt-8">
                   {/* Mobile Search */}
-                  <div className="relative mb-6">
+                  <form onSubmit={(e) => {
+                    handleSearch(e, searchQuery)
+                    setMobileMenuOpen(false)
+                  }} className="relative mb-6">
                     <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-purple-600" />
                     <Input 
-                      type="text" 
+                      type="text"
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
                       placeholder="Search components..." 
                       className="w-full pl-10 pr-4 bg-purple-50 dark:bg-purple-950/20 border-purple-500/30 focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20" 
                     />
-                  </div>
+                  </form>
 
                   {/* Mobile Nav Links with Icons */}
                   <div className="space-y-2">
