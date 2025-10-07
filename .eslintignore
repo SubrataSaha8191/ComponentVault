@@ -1,0 +1,12 @@
+# Ignore generated, build output, caches
+.next/
+node_modules/
+functions/
+
+# Local tooling scripts & temporary test harnesses
+scripts/
+lib/firebase/test-permissions.ts
+lib/firebase/debug.ts
+
+# Public assets
+public/

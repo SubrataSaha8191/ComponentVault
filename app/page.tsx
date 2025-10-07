@@ -308,7 +308,7 @@ export default function ComponentVault() {
             <div className="inline-flex items-center gap-2 px-4 sm:px-6 py-2 rounded-full bg-gradient-to-r from-amber-500/20 to-yellow-500/20 backdrop-blur-sm border border-amber-400/30 shadow-lg shadow-amber-500/20 animate-in fade-in duration-500">
               <Sparkles className="h-3 w-3 sm:h-4 sm:w-4 text-amber-300 animate-pulse" />
               <span className="text-xs sm:text-sm font-semibold bg-gradient-to-r from-amber-200 via-yellow-100 to-amber-200 bg-clip-text text-transparent">
-                Trusted by 50,000+ developers worldwide
+                Trusted by developers worldwide
               </span>
             </div>
             

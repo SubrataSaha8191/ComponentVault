@@ -13,9 +13,13 @@ import {
   Bell,
   ChevronDown,
   ChevronRight,
+  X,
+  Filter,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import Link from "next/link"
+import { Button } from "@/components/ui/button"
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet"
 
 interface Category {
   id: string
@@ -93,6 +97,7 @@ const categories: Category[] = [
 export function SidebarNav() {
   const [activeCategory, setActiveCategory] = useState<string | null>("cards")
   const [expandedCategories, setExpandedCategories] = useState<string[]>(["cards"])
+  const [mobileOpen, setMobileOpen] = useState(false)
 
   const toggleCategory = (categoryId: string) => {
     if (expandedCategories.includes(categoryId)) {
@@ -102,63 +107,95 @@ export function SidebarNav() {
     }
   }
 
-  return (
-    <aside className="w-64 border-r bg-muted/30 h-[calc(100vh-4rem)] sticky top-16 overflow-y-auto">
-      <div className="p-4">
-        <h2 className="font-semibold text-sm text-muted-foreground mb-4 px-2">Categories</h2>
-        <nav className="space-y-1">
-          {categories.map((category) => {
-            const Icon = category.icon
-            const isExpanded = expandedCategories.includes(category.id)
-            const isActive = activeCategory === category.id
+  const CategoryContent = () => (
+    <nav className="space-y-1">
+      {categories.map((category) => {
+        const Icon = category.icon
+        const isExpanded = expandedCategories.includes(category.id)
+        const isActive = activeCategory === category.id
 
-            return (
-              <div key={category.id}>
-                <button
-                  onClick={() => {
-                    setActiveCategory(category.id)
-                    if (category.subcategories) {
-                      toggleCategory(category.id)
-                    }
-                  }}
-                  className={cn(
-                    "w-full flex items-center justify-between px-3 py-2 rounded-lg text-sm font-medium transition-colors",
-                    isActive
-                      ? "bg-purple-100 text-purple-900 dark:bg-purple-900 dark:text-purple-100"
-                      : "text-muted-foreground hover:bg-muted hover:text-foreground",
-                  )}
-                >
-                  <div className="flex items-center gap-3">
-                    <Icon className="h-4 w-4" />
-                    <span>{category.label}</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs">{category.count}</span>
-                    {category.subcategories &&
-                      (isExpanded ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />)}
-                  </div>
-                </button>
-
-                {/* Subcategories */}
-                {category.subcategories && isExpanded && (
-                  <div className="ml-4 mt-1 space-y-1 border-l pl-4">
-                    {category.subcategories.map((sub) => (
-                      <Link
-                        key={sub.id}
-                        href={`/browse/${category.id}/${sub.id}`}
-                        className="flex items-center justify-between px-3 py-2 rounded-lg text-sm text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
-                      >
-                        <span>{sub.label}</span>
-                        <span className="text-xs">{sub.count}</span>
-                      </Link>
-                    ))}
-                  </div>
-                )}
+        return (
+          <div key={category.id}>
+            <button
+              onClick={() => {
+                setActiveCategory(category.id)
+                if (category.subcategories) {
+                  toggleCategory(category.id)
+                }
+              }}
+              className={cn(
+                "w-full flex items-center justify-between px-3 py-2 rounded-lg text-sm font-medium transition-colors",
+                isActive
+                  ? "bg-purple-100 text-purple-900 dark:bg-purple-900 dark:text-purple-100"
+                  : "text-muted-foreground hover:bg-muted hover:text-foreground",
+              )}
+            >
+              <div className="flex items-center gap-3">
+                <Icon className="h-4 w-4" />
+                <span>{category.label}</span>
               </div>
-            )
-          })}
-        </nav>
+              <div className="flex items-center gap-2">
+                <span className="text-xs">{category.count}</span>
+                {category.subcategories &&
+                  (isExpanded ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />)}
+              </div>
+            </button>
+
+            {/* Subcategories */}
+            {category.subcategories && isExpanded && (
+              <div className="ml-4 mt-1 space-y-1 border-l pl-4">
+                {category.subcategories.map((sub) => (
+                  <Link
+                    key={sub.id}
+                    href={`/browse/${category.id}/${sub.id}`}
+                    className="flex items-center justify-between px-3 py-2 rounded-lg text-sm text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
+                  >
+                    <span>{sub.label}</span>
+                    <span className="text-xs">{sub.count}</span>
+                  </Link>
+                ))}
+              </div>
+            )}
+          </div>
+        )
+      })}
+    </nav>
+  )
+
+  return (
+    <>
+      {/* Mobile Filter Button */}
+      <div className="lg:hidden fixed bottom-6 right-6 z-40">
+        <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
+          <SheetTrigger asChild>
+            <Button
+              size="lg"
+              className="rounded-full shadow-lg bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 h-14 w-14"
+            >
+              <Filter className="h-6 w-6" />
+            </Button>
+          </SheetTrigger>
+          <SheetContent side="left" className="w-[280px] sm:w-[320px] p-0">
+            <SheetHeader className="px-4 py-4 border-b">
+              <SheetTitle className="text-left flex items-center gap-2">
+                <Filter className="h-5 w-5 text-purple-600" />
+                Categories
+              </SheetTitle>
+            </SheetHeader>
+            <div className="p-4 overflow-y-auto h-[calc(100vh-80px)]">
+              <CategoryContent />
+            </div>
+          </SheetContent>
+        </Sheet>
       </div>
-    </aside>
+
+      {/* Desktop Sidebar */}
+      <aside className="hidden lg:block w-64 border-r bg-muted/30 h-[calc(100vh-4rem)] sticky top-16 overflow-y-auto">
+        <div className="p-4">
+          <h2 className="font-semibold text-sm text-muted-foreground mb-4 px-2">Categories</h2>
+          <CategoryContent />
+        </div>
+      </aside>
+    </>
   )
 }

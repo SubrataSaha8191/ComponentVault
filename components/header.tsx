@@ -120,7 +120,7 @@ export function Header() {
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Search 10,000+ components..."
+                placeholder="Search components..."
                 className={`w-full pl-10 pr-4 transition-all duration-300 bg-muted/50 dark:bg-muted/30 border-transparent focus:border-purple-500/50 focus:ring-2 focus:ring-purple-500/20 dark:text-white text-gray-900 placeholder:text-gray-500 dark:placeholder:text-gray-400 ${
                   isSearchExpanded ? "shadow-lg shadow-purple-500/10" : ""
                 }`}

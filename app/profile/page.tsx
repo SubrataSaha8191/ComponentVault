@@ -12,6 +12,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Progress } from "@/components/ui/progress"
+import { AuthGuard } from "@/components/auth-guard"
 import { useAuth } from "@/contexts/auth-context"
 import Link from "next/link"
 import { toast } from "sonner"
@@ -232,26 +233,9 @@ export default function ProfilePage() {
     }
   }, [user])
 
-  // If user is not authenticated, show login message
-  if (!user) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-background via-muted/20 to-background flex items-center justify-center">
-        <Card className="mx-auto max-w-md text-center">
-          <CardContent className="p-8">
-            <User className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-            <h2 className="text-xl font-semibold mb-2">Sign in to view your profile</h2>
-            <p className="text-muted-foreground mb-4">You need to be signed in to access your profile page.</p>
-            <Link href="/">
-              <Button>Go to Homepage</Button>
-            </Link>
-          </CardContent>
-        </Card>
-      </div>
-    )
-  }
-
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background via-muted/20 to-background">
+    <AuthGuard requireAuth={true}>
+      <div className="min-h-screen bg-gradient-to-br from-background via-muted/20 to-background">
       <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
         {/* Profile Header */}
         <Card className="mb-8 overflow-hidden border-0 shadow-lg bg-gradient-to-br from-purple-500/10 via-blue-500/10 to-background backdrop-blur-sm animate-in fade-in slide-in-from-top-4 duration-500">
@@ -357,60 +341,50 @@ export default function ProfilePage() {
                 </div>
               </div>
 
-              {/* Action Buttons */}
-              <div className="flex gap-2 animate-in fade-in duration-700 delay-300">
-                <Button 
-                  variant={isFollowing ? "outline" : "default"} 
-                  className={isFollowing ? "" : "bg-purple-600 hover:bg-purple-700"}
-                  onClick={() => setIsFollowing(!isFollowing)}
-                >
-                  <Users className="h-4 w-4 mr-2" />
-                  {isFollowing ? "Following" : "Follow"}
-                </Button>
-                <Button variant="outline">
-                  <Mail className="h-4 w-4" />
-                </Button>
+              {/* Action Buttons - Only show Follow button on other users' profiles */}
+              <div className="flex flex-wrap gap-2 animate-in fade-in duration-700 delay-300">
+
                 <Link href="/settings">
                   <Button variant="outline">
-                    <Edit className="h-4 w-4 mr-2" />
-                    Edit Profile
+                    <Edit className="h-4 w-4 sm:mr-2" />
+                    <span className="hidden sm:inline">Edit Profile</span>
                   </Button>
                 </Link>
               </div>
             </div>
 
-            {/* Stats */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 animate-in fade-in slide-in-from-bottom-4 duration-700 delay-200">
+            {/* Stats - Responsive grid */}
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 animate-in fade-in slide-in-from-bottom-4 duration-700 delay-200">
               <Card className="hover:shadow-md transition-all duration-300 hover:-translate-y-1 bg-gradient-to-br from-purple-50 to-background dark:from-purple-950/20">
-                <CardContent className="p-4 text-center">
-                  <div className="text-3xl font-bold text-purple-600">
+                <CardContent className="p-3 sm:p-4 text-center">
+                  <div className="text-2xl sm:text-3xl font-bold text-purple-600">
                     {loading ? "..." : profileData?.stats?.components || 0}
                   </div>
-                  <div className="text-sm text-muted-foreground mt-1">Components</div>
+                  <div className="text-xs sm:text-sm text-muted-foreground mt-1">Components</div>
                 </CardContent>
               </Card>
               <Card className="hover:shadow-md transition-all duration-300 hover:-translate-y-1 bg-gradient-to-br from-blue-50 to-background dark:from-blue-950/20">
-                <CardContent className="p-4 text-center">
-                  <div className="text-3xl font-bold text-blue-600">
+                <CardContent className="p-3 sm:p-4 text-center">
+                  <div className="text-2xl sm:text-3xl font-bold text-blue-600">
                     {loading ? "..." : (profileData?.stats?.downloads || 0).toLocaleString()}
                   </div>
-                  <div className="text-sm text-muted-foreground mt-1">Downloads</div>
+                  <div className="text-xs sm:text-sm text-muted-foreground mt-1">Downloads</div>
                 </CardContent>
               </Card>
               <Card className="hover:shadow-md transition-all duration-300 hover:-translate-y-1 bg-gradient-to-br from-red-50 to-background dark:from-red-950/20">
-                <CardContent className="p-4 text-center">
-                  <div className="text-3xl font-bold text-red-600">
+                <CardContent className="p-3 sm:p-4 text-center">
+                  <div className="text-2xl sm:text-3xl font-bold text-red-600">
                     {loading ? "..." : (profileData?.stats?.favorites || 0).toLocaleString()}
                   </div>
-                  <div className="text-sm text-muted-foreground mt-1">Favorites</div>
+                  <div className="text-xs sm:text-sm text-muted-foreground mt-1">Favorites</div>
                 </CardContent>
               </Card>
               <Card className="hover:shadow-md transition-all duration-300 hover:-translate-y-1 bg-gradient-to-br from-green-50 to-background dark:from-green-950/20">
-                <CardContent className="p-4 text-center">
-                  <div className="text-3xl font-bold text-green-600">
+                <CardContent className="p-3 sm:p-4 text-center">
+                  <div className="text-2xl sm:text-3xl font-bold text-green-600">
                     {loading ? "..." : (profileData?.stats?.views || 0).toLocaleString()}
                   </div>
-                  <div className="text-sm text-muted-foreground mt-1">Views</div>
+                  <div className="text-xs sm:text-sm text-muted-foreground mt-1">Views</div>
                 </CardContent>
               </Card>
             </div>
@@ -422,9 +396,15 @@ export default function ProfilePage() {
           <div className="lg:col-span-2 space-y-6">
             {/* Tabs for Components and Activity */}
             <Tabs defaultValue="components" className="w-full">
-              <TabsList className="grid w-full grid-cols-2">
-                <TabsTrigger value="components">Recent Components</TabsTrigger>
-                <TabsTrigger value="activity">Activity</TabsTrigger>
+              <TabsList className="grid w-full grid-cols-2 h-auto">
+                <TabsTrigger value="components" className="text-xs sm:text-sm px-3 py-2.5 sm:py-2">
+                  <Package className="h-4 w-4 mr-1 sm:mr-2" />
+                  <span className="hidden xs:inline">Recent </span>Components
+                </TabsTrigger>
+                <TabsTrigger value="activity" className="text-xs sm:text-sm px-3 py-2.5 sm:py-2">
+                  <Activity className="h-4 w-4 mr-1 sm:mr-2" />
+                  Activity
+                </TabsTrigger>
               </TabsList>
               
               <TabsContent value="components" className="space-y-4 mt-6">
@@ -448,38 +428,38 @@ export default function ProfilePage() {
                         className="group hover:shadow-lg transition-all duration-300 hover:-translate-y-1 animate-in fade-in slide-in-from-bottom-4"
                         style={{ animationDelay: `${index * 100}ms` }}
                       >
-                        <CardContent className="p-4">
-                          <div className="flex gap-4">
-                            <div className="relative w-32 h-24 rounded-lg overflow-hidden bg-muted flex-shrink-0">
+                        <CardContent className="p-3 sm:p-4">
+                          <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
+                            <div className="relative w-full sm:w-32 h-32 sm:h-24 rounded-lg overflow-hidden bg-muted flex-shrink-0">
                               <img 
                                 src={component.thumbnail || '/placeholder.svg'} 
                                 alt={component.name}
                                 className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
                               />
                             </div>
-                            <div className="flex-1 space-y-3">
+                            <div className="flex-1 space-y-2 sm:space-y-3">
                               <div>
-                                <h3 className="font-semibold text-lg group-hover:text-purple-600 transition-colors">
+                                <h3 className="font-semibold text-base sm:text-lg group-hover:text-purple-600 transition-colors">
                                   {component.name || component.title}
                                 </h3>
                               </div>
-                              <div className="flex gap-4 text-sm text-muted-foreground">
+                              <div className="flex flex-wrap gap-3 sm:gap-4 text-xs sm:text-sm text-muted-foreground">
                                 <div className="flex items-center gap-1">
-                                  <Download className="h-4 w-4" />
+                                  <Download className="h-3 w-3 sm:h-4 sm:w-4" />
                                   <span>{component.downloads.toLocaleString()}</span>
                                 </div>
                                 <div className="flex items-center gap-1">
-                                  <Heart className="h-4 w-4" />
+                                  <Heart className="h-3 w-3 sm:h-4 sm:w-4" />
                                   <span>{component.favorites}</span>
                                 </div>
                                 <div className="flex items-center gap-1">
-                                  <Eye className="h-4 w-4" />
+                                  <Eye className="h-3 w-3 sm:h-4 sm:w-4" />
                                   <span>{component.views.toLocaleString()}</span>
                                 </div>
                               </div>
                             </div>
-                            <Link href={`/component/${component.id}`}>
-                              <Button variant="ghost" size="sm">
+                            <Link href={`/component/${component.id}`} className="sm:self-start">
+                              <Button variant="ghost" size="sm" className="w-full sm:w-auto">
                                 View
                               </Button>
                             </Link>
@@ -621,5 +601,6 @@ export default function ProfilePage() {
         </div>
       </div>
     </div>
+    </AuthGuard>
   )
 }

@@ -71,9 +71,9 @@ export const debugFirebase = {
           }
         }, 'image/png')
       })
-    } catch (error) {
+    } catch (error: any) {
       console.error('❌ Image upload test failed:', error)
-      return { success: false, error: error.message }
+      return { success: false, error: error?.message || 'Unknown error' }
     }
   },
 
@@ -98,11 +98,11 @@ export const debugFirebase = {
       console.log('✅ Firestore write successful')
       console.log('Document ID:', docRef.id)
       return docRef.id
-    } catch (error) {
+    } catch (error: any) {
       console.error('❌ Firestore write failed:', error)
       
       // Provide specific guidance for permission errors
-      if (error.code === 'permission-denied') {
+      if (error?.code === 'permission-denied') {
         console.log('🔧 Permission denied - possible solutions:')
         console.log('1. Update Firestore security rules')
         console.log('2. Ensure user is authenticated')
@@ -141,10 +141,10 @@ export const debugFirebase = {
       console.log('✅ Component creation successful')
       console.log('Test component ID:', docRef.id)
       return docRef.id
-    } catch (error) {
+    } catch (error: any) {
       console.error('❌ Component creation failed:', error)
       
-      if (error.code === 'permission-denied') {
+      if (error?.code === 'permission-denied') {
         console.log('🔧 Component creation permission denied - solutions:')
         console.log('1. Ensure user is authenticated')
         console.log('2. Check that authorId matches authenticated user UID')
@@ -163,7 +163,7 @@ export const debugFirebase = {
     const results = {
       auth: debugFirebase.testAuth(),
       firestore: await debugFirebase.testFirestore(),
-      imageUpload: !!(await debugFirebase.testImageUpload()).success,
+      imageUpload: !!(await debugFirebase.testImageUpload() as any)?.success,
       firestoreWrite: !!(await debugFirebase.testFirestoreWrite()),
       componentCreation: !!(await debugFirebase.testComponentCreation())
     }
@@ -211,8 +211,8 @@ export const debugFirebase = {
       'NEXT_PUBLIC_IMGBB_API_KEY'
     ]
     
-    const missing = []
-    const present = []
+    const missing: string[] = []
+    const present: string[] = []
     
     requiredVars.forEach(varName => {
       const value = process.env[varName]

@@ -23,13 +23,16 @@ import { Skeleton } from "@/components/ui/skeleton"
 import ClientOnly from "@/components/client-only"
 import { FolderOpen, Plus, Search, Lock, Globe, Heart, Eye, Layers, TrendingUp, Clock } from "lucide-react"
 import Link from "next/link"
+import { useRouter } from "next/navigation"
 import { useAuth } from "@/contexts/auth-context"
 import { useAllCollections } from "@/hooks/use-collections"
 import { useStats } from "@/hooks/use-stats"
 import { Collection } from "@/lib/firebase/types"
+import { toast } from "sonner"
 
 export default function CollectionsPage() {
   const { user } = useAuth()
+  const router = useRouter()
   const [searchQuery, setSearchQuery] = useState("")
   const [sortBy, setSortBy] = useState("popular")
   const [activeTab, setActiveTab] = useState("all")
@@ -37,6 +40,14 @@ export default function CollectionsPage() {
   const [isCreating, setIsCreating] = useState(false)
   const [thumbnailFile, setThumbnailFile] = useState<File | null>(null)
   const [thumbnailPreview, setThumbnailPreview] = useState<string | null>(null)
+
+  // Fetch hook for refreshing
+  const { refresh: refreshCollections } = useAllCollections({
+    userId: user?.uid,
+    orderBy: 'updatedAt',
+    order: "desc",
+    limit: 50,
+  })
 
   // Fetch all collections with current user context
   const { collections, loading: collectionsLoading, error: collectionsError } = useAllCollections({
@@ -213,16 +224,18 @@ export default function CollectionsPage() {
       const result = await response.json()
 
       if (response.ok) {
+        toast.success('Collection created successfully!')
         setIsCreateDialogOpen(false)
         setThumbnailFile(null)
         setThumbnailPreview(null)
-        window.location.reload()
+        // Refresh collections instead of page reload
+        refreshCollections()
       } else {
-        alert(`Failed to create collection: ${result.error}${result.details ? ' - ' + result.details : ''}`)
+        toast.error(`Failed to create collection: ${result.error}${result.details ? ' - ' + result.details : ''}`)
       }
     } catch (error) {
       console.error('Error creating collection:', error)
-      alert('Error creating collection. Please try again.')
+      toast.error('Error creating collection. Please try again.')
     } finally {
       setIsCreating(false)
     }
@@ -409,17 +422,25 @@ export default function CollectionsPage() {
 
         {/* Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="grid w-full grid-cols-4">
-            <TabsTrigger value="all">All Collections</TabsTrigger>
-            <TabsTrigger value="public">
-              <Globe className="h-4 w-4 mr-2" />
-              Public
+          <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4 gap-1 sm:gap-0 h-auto p-1">
+            <TabsTrigger value="all" className="text-xs sm:text-sm py-2.5 sm:py-2">
+              <span className="hidden sm:inline">All Collections</span>
+              <span className="sm:hidden">All</span>
             </TabsTrigger>
-            <TabsTrigger value="private">
-              <Lock className="h-4 w-4 mr-2" />
-              Private
+            <TabsTrigger value="public" className="text-xs sm:text-sm py-2.5 sm:py-2">
+              <Globe className="h-3 w-3 sm:h-4 sm:w-4 sm:mr-2" />
+              <span className="hidden sm:inline">Public</span>
+              <span className="sm:hidden ml-1">Public</span>
             </TabsTrigger>
-            <TabsTrigger value="mine">My Collections</TabsTrigger>
+            <TabsTrigger value="private" className="text-xs sm:text-sm py-2.5 sm:py-2">
+              <Lock className="h-3 w-3 sm:h-4 sm:w-4 sm:mr-2" />
+              <span className="hidden sm:inline">Private</span>
+              <span className="sm:hidden ml-1">Private</span>
+            </TabsTrigger>
+            <TabsTrigger value="mine" className="text-xs sm:text-sm py-2.5 sm:py-2">
+              <span className="hidden sm:inline">My Collections</span>
+              <span className="sm:hidden">Mine</span>
+            </TabsTrigger>
           </TabsList>
 
           <TabsContent value={activeTab} className="space-y-6">
@@ -482,39 +503,36 @@ export default function CollectionsPage() {
                 {filteredCollections.map((collection) => (
                   <Card
                     key={collection.id}
-                    className="group hover:shadow-xl transition-all duration-300 overflow-hidden"
+                    className="group hover:shadow-xl transition-all duration-300 overflow-hidden cursor-pointer"
+                    onClick={() => router.push(`/collections/${collection.id}`)}
                   >
-                    <Link href={`/collections/${collection.id}`}>
-                      <div className="relative aspect-video overflow-hidden bg-muted">
-                        <img
-                          src={collection.coverImage || "/placeholder.svg"}
-                          alt={collection.name}
-                          className="object-cover w-full h-full group-hover:scale-105 transition-transform duration-300"
-                        />
-                        <div className="absolute top-3 right-3">
-                          <Badge variant={collection.isPublic ? "default" : "secondary"} className="gap-1">
-                            {collection.isPublic ? (
-                              <>
-                                <Globe className="h-3 w-3" />
-                                Public
-                              </>
-                            ) : (
-                              <>
-                                <Lock className="h-3 w-3" />
-                                Private
-                              </>
-                            )}
-                          </Badge>
-                        </div>
+                    <div className="relative aspect-video overflow-hidden bg-muted">
+                      <img
+                        src={collection.coverImage || "/placeholder.svg"}
+                        alt={collection.name}
+                        className="object-cover w-full h-full group-hover:scale-105 transition-transform duration-300"
+                      />
+                      <div className="absolute top-3 right-3">
+                        <Badge variant={collection.isPublic ? "default" : "secondary"} className="gap-1">
+                          {collection.isPublic ? (
+                            <>
+                              <Globe className="h-3 w-3" />
+                              Public
+                            </>
+                          ) : (
+                            <>
+                              <Lock className="h-3 w-3" />
+                              Private
+                            </>
+                          )}
+                        </Badge>
                       </div>
-                    </Link>
+                    </div>
 
                     <CardHeader>
-                      <Link href={`/collections/${collection.id}`}>
-                        <CardTitle className="group-hover:text-primary transition-colors cursor-pointer">
-                          {collection.name}
-                        </CardTitle>
-                      </Link>
+                      <CardTitle className="group-hover:text-primary transition-colors">
+                        {collection.name}
+                      </CardTitle>
                       <CardDescription className="line-clamp-2">{collection.description}</CardDescription>
                     </CardHeader>
 
@@ -532,18 +550,20 @@ export default function CollectionsPage() {
                       </div>
 
                       {/* Author */}
-                      <div className="flex items-center gap-2 pt-2 border-t">
-                        <Link href={`/user/${collection.userId}`}>
-                          <Avatar className="h-8 w-8 hover:scale-105 transition-transform cursor-pointer">
-                            <AvatarFallback>{collection.userName?.charAt(0) || 'U'}</AvatarFallback>
-                          </Avatar>
-                        </Link>
+                      <div 
+                        className="flex items-center gap-2 pt-2 border-t cursor-pointer hover:bg-muted/50 -mx-6 px-6 py-2"
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          router.push(`/user/${collection.userId}`)
+                        }}
+                      >
+                        <Avatar className="h-8 w-8 hover:scale-105 transition-transform">
+                          <AvatarFallback>{collection.userName?.charAt(0) || 'U'}</AvatarFallback>
+                        </Avatar>
                         <div className="flex-1 min-w-0">
-                          <Link href={`/user/${collection.userId}`}>
-                            <p className="text-sm font-medium hover:text-primary cursor-pointer truncate">
-                              {collection.userName || 'Anonymous'}
-                            </p>
-                          </Link>
+                          <p className="text-sm font-medium hover:text-primary truncate">
+                            {collection.userName || 'Anonymous'}
+                          </p>
                           <div className="flex items-center gap-1 text-xs text-muted-foreground">
                             <Clock className="h-3 w-3" />
                             {formatTimeAgo(collection.updatedAt)}
@@ -553,8 +573,15 @@ export default function CollectionsPage() {
                     </CardContent>
 
                     <CardFooter className="pt-0">
-                      <Button variant="outline" className="w-full bg-transparent" asChild>
-                        <Link href={`/collections/${collection.id}`}>View Collection</Link>
+                      <Button 
+                        variant="outline" 
+                        className="w-full bg-transparent"
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          router.push(`/collections/${collection.id}`)
+                        }}
+                      >
+                        View Collection
                       </Button>
                     </CardFooter>
                   </Card>

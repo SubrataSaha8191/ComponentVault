@@ -3,13 +3,20 @@
 import { useState, useEffect } from "react"
 import { 
   Search, Package, Heart, Download, Eye, Star, Edit, Trash2, 
-  Upload, Filter, SortAsc, Grid3x3, List, Copy, Check, Plus
+  Upload, Filter, SortAsc, Grid3x3, List, Copy, Check, Plus,
+  Monitor, Tablet, Smartphone, Sun, Moon, Code2, X
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -18,12 +25,13 @@ import {
 } from "@/components/ui/dropdown-menu"
 import Link from "next/link"
 import { useAuth } from "@/contexts/auth-context"
-import { collection, query, where, getDocs, doc, updateDoc, increment } from "firebase/firestore"
+import { collection, query, where, getDocs } from "firebase/firestore"
 import { db } from "@/lib/firebase/config"
 import { Component } from "@/lib/firebase/types"
 import { downloadComponent } from "@/lib/download-utils"
 import { toast } from "sonner"
 import { useRouter } from "next/navigation"
+import { cn } from "@/lib/utils"
 
 export default function MyComponentsPage() {
   const { user, loading: authLoading } = useAuth()
@@ -37,6 +45,12 @@ export default function MyComponentsPage() {
   const [totalDownloads, setTotalDownloads] = useState(0)
   const [totalFavorites, setTotalFavorites] = useState(0)
   const [totalViews, setTotalViews] = useState(0)
+  
+  // Live preview modal states
+  const [previewComponent, setPreviewComponent] = useState<Component | null>(null)
+  const [previewMode, setPreviewMode] = useState<"desktop" | "tablet" | "mobile">("desktop")
+  const [isDarkMode, setIsDarkMode] = useState(true)
+  const [showCode, setShowCode] = useState(false)
 
   // Fetch user's uploaded components and saved components
   useEffect(() => {
@@ -60,9 +74,9 @@ export default function MyComponentsPage() {
           where('authorId', '==', user.uid)
         )
         const uploadedSnapshot = await getDocs(uploadedQuery)
-        const uploaded = uploadedSnapshot.docs.map(doc => ({
-          id: doc.id,
-          ...doc.data()
+        const uploaded = uploadedSnapshot.docs.map(d => ({
+          id: d.id,
+          ...d.data()
         } as Component))
         setMyComponents(uploaded)
 
@@ -75,25 +89,17 @@ export default function MyComponentsPage() {
         setTotalViews(views)
         setTotalFavorites(likes)
 
-        // Fetch saved/favorited components
-        const favoritesQuery = query(
-          collection(db, 'favorites'),
-          where('userId', '==', user.uid)
-        )
-        const favoritesSnapshot = await getDocs(favoritesQuery)
-        const favoriteIds = favoritesSnapshot.docs.map(doc => doc.data().componentId)
-
-        if (favoriteIds.length > 0) {
-          // Fetch component details for favorites
-          const componentsQuery = collection(db, 'components')
-          const componentsSnapshot = await getDocs(componentsQuery)
-          const saved = componentsSnapshot.docs
-            .filter(doc => favoriteIds.includes(doc.id))
-            .map(doc => ({
-              id: doc.id,
-              ...doc.data()
-            } as Component))
-          setSavedComponents(saved)
+        // Fetch saved/favorited components via server API (avoids client perms issues)
+        try {
+          const res = await fetch(`/api/favorites?userId=${encodeURIComponent(user.uid)}`)
+          if (res.ok) {
+            const saved = await res.json()
+            setSavedComponents(saved as Component[])
+          } else {
+            console.warn('Failed to load saved components:', await res.text())
+          }
+        } catch (e) {
+          console.warn('Saved components fetch failed:', e)
         }
 
       } catch (error) {
@@ -106,6 +112,19 @@ export default function MyComponentsPage() {
 
     fetchData()
   }, [user, router, authLoading])
+
+  const previewSizes = {
+    desktop: "w-full",
+    tablet: "w-[768px] mx-auto",
+    mobile: "w-[375px] mx-auto",
+  }
+
+  const handleViewComponent = (component: Component) => {
+    setPreviewComponent(component)
+    setPreviewMode("desktop")
+    setIsDarkMode(true)
+    setShowCode(false)
+  }
 
   const handleCopy = async (component: Component) => {
     try {
@@ -126,11 +145,16 @@ export default function MyComponentsPage() {
       // Download the component as ZIP
       await downloadComponent(component)
       
-      // Update download count in Firestore
-      await updateDoc(doc(db, "components", component.id), {
-        downloads: increment(1),
-        "stats.downloads": increment(1)
-      })
+      // Update download count via server API to bypass client security restrictions
+      try {
+        await fetch(`/api/components/${component.id}/metrics`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'download' })
+        })
+      } catch (e) {
+        console.warn('Metrics update failed:', e)
+      }
       
       toast.success("Component downloaded successfully!")
       
@@ -411,10 +435,10 @@ export default function MyComponentsPage() {
                           <Button 
                             size="sm" 
                             className="w-full bg-purple-600 hover:bg-purple-700"
-                            onClick={() => router.push(`/component/${component.id}`)}
+                            onClick={() => handleViewComponent(component)}
                           >
                             <Eye className="h-4 w-4 mr-1" />
-                            View
+                            Live Preview
                           </Button>
                           <div className="grid grid-cols-3 gap-2">
                             <Button 
@@ -498,10 +522,10 @@ export default function MyComponentsPage() {
                                 <Button 
                                   size="sm" 
                                   className="bg-purple-600 hover:bg-purple-700"
-                                  onClick={() => router.push(`/component/${component.id}`)}
+                                  onClick={() => handleViewComponent(component)}
                                 >
                                   <Eye className="h-4 w-4 mr-1" />
-                                  View
+                                  Live Preview
                                 </Button>
                                 <Button 
                                   size="sm" 
@@ -603,10 +627,10 @@ export default function MyComponentsPage() {
                       <Button 
                         size="sm" 
                         className="col-span-2 bg-purple-600 hover:bg-purple-700"
-                        onClick={() => router.push(`/component/${component.id}`)}
+                        onClick={() => handleViewComponent(component)}
                       >
                         <Eye className="h-4 w-4 mr-1" />
-                        View
+                        Live Preview
                       </Button>
                       <Button 
                         size="sm" 
@@ -642,6 +666,205 @@ export default function MyComponentsPage() {
           </TabsContent>
         </Tabs>
       </div>
+
+      {/* Live Preview Dialog */}
+      <Dialog open={!!previewComponent} onOpenChange={(open) => !open && setPreviewComponent(null)}>
+        <DialogContent className="max-w-7xl max-h-[90vh] overflow-y-auto bg-gradient-to-br from-gray-950 via-gray-900 to-gray-950 border-white/10">
+          <DialogHeader>
+            <div className="flex items-center justify-between">
+              <DialogTitle className="text-2xl font-bold text-white">
+                {previewComponent?.name || previewComponent?.title}
+              </DialogTitle>
+              <div className="flex items-center gap-2">
+                <Badge variant="secondary" className="bg-purple-500/20 text-purple-300">
+                  {previewComponent?.category}
+                </Badge>
+              </div>
+            </div>
+          </DialogHeader>
+
+          {previewComponent && (
+            <div className="space-y-6 mt-4">
+              {/* Control Bar */}
+              <div className="flex items-center justify-between flex-wrap gap-4 pb-4 border-b border-white/10">
+                <p className="text-gray-400">{previewComponent.description}</p>
+                
+                <div className="flex items-center gap-2">
+                  {/* Preview Mode Selector */}
+                  <div className="flex items-center gap-1 bg-white/5 rounded-lg p-1">
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => setPreviewMode("desktop")}
+                      className={cn("h-8 w-8 p-0", previewMode === "desktop" && "bg-purple-500/20 text-purple-300")}
+                      title="Desktop view"
+                    >
+                      <Monitor className="w-4 h-4" />
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => setPreviewMode("tablet")}
+                      className={cn("h-8 w-8 p-0", previewMode === "tablet" && "bg-purple-500/20 text-purple-300")}
+                      title="Tablet view"
+                    >
+                      <Tablet className="w-4 h-4" />
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => setPreviewMode("mobile")}
+                      className={cn("h-8 w-8 p-0", previewMode === "mobile" && "bg-purple-500/20 text-purple-300")}
+                      title="Mobile view"
+                    >
+                      <Smartphone className="w-4 h-4" />
+                    </Button>
+                  </div>
+
+                  {/* Theme Toggle */}
+                  <Button 
+                    size="sm" 
+                    variant="ghost" 
+                    onClick={() => setIsDarkMode(!isDarkMode)} 
+                    className="h-8 w-8 p-0"
+                    title={isDarkMode ? "Light mode" : "Dark mode"}
+                  >
+                    {isDarkMode ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+                  </Button>
+
+                  {/* Code Toggle */}
+                  <Button 
+                    size="sm" 
+                    variant="ghost" 
+                    onClick={() => setShowCode(!showCode)} 
+                    className={cn("h-8 gap-2", showCode && "bg-blue-500/20 text-blue-300")}
+                    title={showCode ? "Hide code" : "Show code"}
+                  >
+                    <Code2 className="w-4 h-4" />
+                    {showCode ? "Hide" : "Code"}
+                  </Button>
+
+                  {/* Actions */}
+                  <Button 
+                    size="sm" 
+                    variant="outline"
+                    onClick={() => handleCopy(previewComponent)}
+                    className="h-8 gap-2"
+                  >
+                    {copiedId === previewComponent.id ? (
+                      <>
+                        <Check className="w-4 h-4" />
+                        Copied!
+                      </>
+                    ) : (
+                      <>
+                        <Copy className="w-4 h-4" />
+                        Copy
+                      </>
+                    )}
+                  </Button>
+                  <Button 
+                    size="sm" 
+                    variant="outline"
+                    onClick={() => handleDownload(previewComponent)}
+                    className="h-8 gap-2"
+                  >
+                    <Download className="w-4 h-4" />
+                    Download
+                  </Button>
+                </div>
+              </div>
+
+              {/* Preview Area */}
+              <div
+                className={cn(
+                  "rounded-lg p-8 transition-all duration-300 min-h-[400px] flex items-center justify-center",
+                  isDarkMode ? "bg-gray-950 border border-white/10" : "bg-white border border-gray-200"
+                )}
+              >
+                <div className={cn("transition-all duration-300", previewSizes[previewMode])}>
+                  {previewComponent.previewImage ? (
+                    <div className="space-y-4">
+                      <img
+                        src={previewComponent.previewImage}
+                        alt={previewComponent.name || "Component preview"}
+                        className="w-full h-auto rounded-lg shadow-2xl"
+                      />
+                      {previewComponent.code && previewComponent.code.includes('<') && (
+                        <div className="text-xs text-center text-gray-400">
+                          Preview image • Toggle "Code" to see source
+                        </div>
+                      )}
+                    </div>
+                  ) : previewComponent.code && previewComponent.code.includes('<') ? (
+                    <div className="w-full">
+                      <div className="text-xs text-center text-gray-400 mb-4">
+                        Live HTML render (experimental)
+                      </div>
+                      <div 
+                        className={cn(
+                          "w-full p-4 border rounded-lg",
+                          isDarkMode ? "border-white/10" : "border-gray-200"
+                        )}
+                        dangerouslySetInnerHTML={{ __html: previewComponent.code }}
+                      />
+                    </div>
+                  ) : (
+                    <div className="text-center text-gray-500">
+                      <Package className="w-16 h-16 mx-auto mb-4 opacity-50" />
+                      <p>No preview available</p>
+                      <p className="text-sm mt-2">Upload a preview image when editing this component</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Code Section */}
+              {showCode && previewComponent.code && (
+                <div className="space-y-3">
+                  <div className="flex items-center gap-2">
+                    <Code2 className="w-5 h-5 text-blue-400" />
+                    <h3 className="text-lg font-semibold text-white">Source Code</h3>
+                  </div>
+                  <div className="relative max-h-[400px] overflow-auto">
+                    <pre className="bg-black/30 rounded-lg p-4 border border-white/10">
+                      <code className="text-sm text-gray-300 font-mono leading-relaxed whitespace-pre-wrap break-words">
+                        {previewComponent.code}
+                      </code>
+                    </pre>
+                  </div>
+                </div>
+              )}
+
+              {/* Stats Footer */}
+              <div className="flex items-center justify-between pt-4 border-t border-white/10 text-sm">
+                <div className="flex items-center gap-6 text-gray-400">
+                  <div className="flex items-center gap-2">
+                    <Eye className="w-4 h-4" />
+                    <span>{(previewComponent.stats?.views || previewComponent.views || 0).toLocaleString()} views</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Download className="w-4 h-4" />
+                    <span>{(previewComponent.stats?.downloads || previewComponent.downloads || 0).toLocaleString()} downloads</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Heart className="w-4 h-4" />
+                    <span>{(previewComponent.stats?.likes || previewComponent.likes || 0)} favorites</span>
+                  </div>
+                </div>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => router.push(`/component/${previewComponent.id}/owner-view`)}
+                  className="h-8"
+                >
+                  Open Full View
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

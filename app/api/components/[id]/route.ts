@@ -7,10 +7,10 @@ import * as admin from 'firebase-admin'
 // GET - Fetch single component by ID (Admin SDK, safe for server usage)
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { id } = params
+    const { id } = await params
 
     const docRef = adminDb.collection('components').doc(id)
     const doc = await docRef.get()
@@ -45,10 +45,10 @@ export async function GET(
 // PUT - Update a component
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { id } = params;
+    const { id } = await params;
     const data = await request.json();
 
     await updateComponent(id, data);
@@ -69,10 +69,10 @@ export async function PUT(
 // DELETE - Delete a component
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { id } = params;
+    const { id } = await params;
     const { searchParams } = new URL(request.url);
     const authorId = searchParams.get('authorId');
     const previewUrl = searchParams.get('previewUrl');

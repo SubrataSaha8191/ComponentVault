@@ -79,26 +79,27 @@ export default function SettingsPage() {
         </div>
 
         <Tabs defaultValue="profile" className="w-full">
-          <TabsList className="grid w-full grid-cols-2 lg:grid-cols-5 mb-8 h-auto">
-            <TabsTrigger value="profile" className="gap-2">
+          <TabsList className="grid w-full grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 mb-8 h-auto gap-1">
+            <TabsTrigger value="profile" className="flex-col sm:flex-row gap-1 sm:gap-2 py-2.5 sm:py-2 text-xs sm:text-sm">
               <User className="h-4 w-4" />
-              <span className="hidden sm:inline">Profile</span>
+              <span>Profile</span>
             </TabsTrigger>
-            <TabsTrigger value="account" className="gap-2">
+            <TabsTrigger value="account" className="flex-col sm:flex-row gap-1 sm:gap-2 py-2.5 sm:py-2 text-xs sm:text-sm">
               <Shield className="h-4 w-4" />
-              <span className="hidden sm:inline">Account</span>
+              <span>Account</span>
             </TabsTrigger>
-            <TabsTrigger value="appearance" className="gap-2">
+            <TabsTrigger value="appearance" className="flex-col sm:flex-row gap-1 sm:gap-2 py-2.5 sm:py-2 text-xs sm:text-sm">
               <Palette className="h-4 w-4" />
-              <span className="hidden sm:inline">Appearance</span>
+              <span>Appearance</span>
             </TabsTrigger>
-            <TabsTrigger value="notifications" className="gap-2">
+            <TabsTrigger value="notifications" className="flex-col sm:flex-row gap-1 sm:gap-2 py-2.5 sm:py-2 text-xs sm:text-sm">
               <Bell className="h-4 w-4" />
-              <span className="hidden sm:inline">Notifications</span>
+              <span className="hidden xs:inline">Notifications</span>
+              <span className="xs:hidden">Notifs</span>
             </TabsTrigger>
-            <TabsTrigger value="privacy" className="gap-2">
+            <TabsTrigger value="privacy" className="flex-col sm:flex-row gap-1 sm:gap-2 py-2.5 sm:py-2 text-xs sm:text-sm">
               <Lock className="h-4 w-4" />
-              <span className="hidden sm:inline">Privacy</span>
+              <span>Privacy</span>
             </TabsTrigger>
           </TabsList>
 
@@ -111,18 +112,18 @@ export default function SettingsPage() {
               </CardHeader>
               <CardContent className="space-y-6">
                 {/* Avatar Section */}
-                <div className="flex items-center gap-6">
-                  <Avatar className="h-24 w-24 border-4 border-purple-500/20 hover:scale-105 transition-transform duration-300">
+                <div className="flex flex-col sm:flex-row items-center sm:items-start gap-4 sm:gap-6">
+                  <Avatar className="h-20 w-20 sm:h-24 sm:w-24 border-4 border-purple-500/20 hover:scale-105 transition-transform duration-300">
                     <AvatarImage src={photoURL} alt="Profile" />
-                    <AvatarFallback className="text-2xl bg-gradient-to-br from-purple-600 to-blue-600 text-white">
+                    <AvatarFallback className="text-xl sm:text-2xl bg-gradient-to-br from-purple-600 to-blue-600 text-white">
                       {getInitials(displayName)}
                     </AvatarFallback>
                   </Avatar>
-                  <div className="space-y-2">
+                  <div className="space-y-2 text-center sm:text-left flex-1">
                     <Label>Profile Picture</Label>
-                    <div className="flex gap-2">
-                      <Button variant="outline" size="sm">Change Avatar</Button>
-                      <Button variant="outline" size="sm" className="text-red-600 hover:text-red-700">
+                    <div className="flex flex-col sm:flex-row gap-2">
+                      <Button variant="outline" size="sm" className="w-full sm:w-auto">Change Avatar</Button>
+                      <Button variant="outline" size="sm" className="w-full sm:w-auto text-red-600 hover:text-red-700">
                         Remove
                       </Button>
                     </div>
@@ -133,7 +134,7 @@ export default function SettingsPage() {
                 <Separator />
 
                 {/* Form Fields */}
-                <div className="grid gap-6 md:grid-cols-2">
+                <div className="grid gap-4 sm:gap-6 md:grid-cols-2">
                   <div className="space-y-2">
                     <Label htmlFor="fullName">Full Name</Label>
                     <Input id="fullName" placeholder="Enter your full name" defaultValue={displayName} />
@@ -200,7 +201,7 @@ export default function SettingsPage() {
                 {/* Social Links */}
                 <div className="space-y-4">
                   <Label>Social Links</Label>
-                  <div className="grid gap-4 md:grid-cols-2">
+                  <div className="grid gap-3 sm:gap-4 sm:grid-cols-2">
                     <div className="relative">
                       <Twitter className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                       <Input placeholder="Add Twitter username" className="pl-10" />
@@ -212,9 +213,9 @@ export default function SettingsPage() {
                   </div>
                 </div>
 
-                <div className="flex justify-end gap-2">
-                  <Button variant="outline">Cancel</Button>
-                  <Button className="bg-purple-600 hover:bg-purple-700" onClick={handleSave}>
+                <div className="flex flex-col-reverse sm:flex-row justify-end gap-2">
+                  <Button variant="outline" className="w-full sm:w-auto">Cancel</Button>
+                  <Button className="w-full sm:w-auto bg-purple-600 hover:bg-purple-700" onClick={handleSave}>
                     {saved ? (
                       <>
                         <Check className="h-4 w-4 mr-2" />
@@ -266,7 +267,7 @@ export default function SettingsPage() {
                   </div>
                 </div>
 
-                <Button className="bg-purple-600 hover:bg-purple-700">
+                <Button className="w-full sm:w-auto bg-purple-600 hover:bg-purple-700">
                   Update Password
                 </Button>
 
@@ -290,12 +291,12 @@ export default function SettingsPage() {
                 <CardDescription>Irreversible and destructive actions</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="flex items-center justify-between p-4 border border-red-500/20 rounded-lg">
+                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 p-4 border border-red-500/20 rounded-lg">
                   <div>
                     <p className="font-medium">Delete Account</p>
                     <p className="text-sm text-muted-foreground">Permanently delete your account and all data</p>
                   </div>
-                  <Button variant="destructive" size="sm">
+                  <Button variant="destructive" size="sm" className="w-full sm:w-auto">
                     <Trash2 className="h-4 w-4 mr-2" />
                     Delete
                   </Button>
@@ -315,7 +316,7 @@ export default function SettingsPage() {
                 <div className="space-y-4">
                   <Label>Theme</Label>
                   <Select value={theme} onValueChange={setTheme}>
-                    <SelectTrigger className="w-full">
+                    <SelectTrigger className="w-full sm:w-[200px]">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -346,7 +347,7 @@ export default function SettingsPage() {
                 <div className="space-y-4">
                   <Label>Language</Label>
                   <Select defaultValue="en">
-                    <SelectTrigger className="w-full">
+                    <SelectTrigger className="w-full sm:w-[200px]">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -500,7 +501,7 @@ export default function SettingsPage() {
                 <div className="space-y-4">
                   <Label>Data Export</Label>
                   <p className="text-sm text-muted-foreground">Download a copy of your data</p>
-                  <Button variant="outline">
+                  <Button variant="outline" className="w-full sm:w-auto">
                     Request Data Export
                   </Button>
                 </div>

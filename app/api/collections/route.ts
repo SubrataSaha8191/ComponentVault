@@ -1,13 +1,4 @@
 import { NextRequest, NextResponse } from 'next/server';
-import {
-  getUserCollections,
-  getCollectionById,
-  updateCollection,
-  deleteCollection,
-  addComponentToCollection,
-  removeComponentFromCollection,
-  getAllPublicCollections,
-} from '@/lib/firebase/firestore';
 import { adminDb, adminAuth } from '@/lib/firebase/admin';
 import * as admin from 'firebase-admin';
 
@@ -34,21 +25,62 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ id: doc.id, ...doc.data() });
     }
 
-    // Fetch user collections
+    // Normalize options
+    const limitCount = limit ? parseInt(limit) : undefined;
+    const orderByField = orderBy || 'updatedAt';
+    const orderDirection: 'asc' | 'desc' = order || 'desc';
+
+    // Helper to safely get millis from Firestore Timestamp or string/date
+    const toMillis = (v: any): number => {
+      if (!v) return 0;
+      if (typeof v?.toMillis === 'function') return v.toMillis();
+      const d = typeof v === 'string' ? new Date(v) : v;
+      return d instanceof Date ? d.getTime() : 0;
+    };
+
+    // Fetch collections using Admin SDK to bypass client security rules and index requirements.
+    // We avoid composite orderBy in Firestore and instead sort in memory.
+    let results: any[] = [];
+
     if (userId && type === 'user') {
-      const collections = await getUserCollections(userId);
-      return NextResponse.json(collections);
+      // Only this user's collections (including private)
+      const snap = await adminDb.collection('collections').where('userId', '==', userId).get();
+      results = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    } else if (userId) {
+      // Combine user's collections and public collections, then de-duplicate
+      const [userSnap, publicSnap] = await Promise.all([
+        adminDb.collection('collections').where('userId', '==', userId).get(),
+        adminDb.collection('collections').where('isPublic', '==', true).get(),
+      ]);
+      const userCols = userSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+      const publicCols = publicSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+      const map = new Map<string, any>();
+      [...publicCols, ...userCols].forEach(c => map.set(c.id, c));
+      results = Array.from(map.values());
+    } else {
+      // Public collections only
+      const snap = await adminDb.collection('collections').where('isPublic', '==', true).get();
+      results = snap.docs.map(d => ({ id: d.id, ...d.data() }));
     }
 
-    // Fetch all public collections (with optional user private collections)
-    const collections = await getAllPublicCollections({
-      limitCount: limit ? parseInt(limit) : undefined,
-      orderByField: orderBy || 'updatedAt',
-      orderDirection: order || 'desc',
-      userId: userId || undefined,
+    // In-memory sorting
+    results.sort((a, b) => {
+      const aVal = orderByField === 'updatedAt' || orderByField === 'createdAt'
+        ? toMillis((a as any)[orderByField])
+        : ((a as any)[orderByField] ?? 0);
+      const bVal = orderByField === 'updatedAt' || orderByField === 'createdAt'
+        ? toMillis((b as any)[orderByField])
+        : ((b as any)[orderByField] ?? 0);
+      const cmp = aVal < bVal ? -1 : aVal > bVal ? 1 : 0;
+      return orderDirection === 'asc' ? cmp : -cmp;
     });
 
-    return NextResponse.json(collections);
+    // Apply limit if requested
+    if (limitCount && results.length > limitCount) {
+      results = results.slice(0, limitCount);
+    }
+
+    return NextResponse.json(results);
   } catch (error) {
     console.error('Error fetching collections:', error);
     return NextResponse.json(

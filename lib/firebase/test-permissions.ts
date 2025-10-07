@@ -1,7 +1,7 @@
 // Firebase Connection Test Script
 // Run this in browser console or create a test page
 
-import { auth, db } from './lib/firebase/config'
+import { auth, db } from './config'
 import { 
   signInAnonymously,
   onAuthStateChanged 
@@ -41,9 +41,9 @@ export const testFirebasePermissions = async () => {
       const q = query(collection(db, 'components'), limit(1))
       const snapshot = await getDocs(q)
       console.log('✅ Read permission successful. Documents found:', snapshot.size)
-    } catch (readError) {
+    } catch (readError: any) {
       console.error('❌ Read permission failed:', readError)
-      if (readError.code === 'permission-denied') {
+      if (readError?.code === 'permission-denied') {
         console.log('💡 Solution: Update Firestore security rules')
         return false
       }
@@ -61,9 +61,9 @@ export const testFirebasePermissions = async () => {
       
       const docRef = await addDoc(collection(db, 'debug-tests'), testData)
       console.log('✅ Write permission successful. Document ID:', docRef.id)
-    } catch (writeError) {
+    } catch (writeError: any) {
       console.error('❌ Write permission failed:', writeError)
-      if (writeError.code === 'permission-denied') {
+      if (writeError?.code === 'permission-denied') {
         console.log('💡 Solution: Update Firestore security rules to allow writes')
         return false
       }
@@ -86,9 +86,9 @@ export const testFirebasePermissions = async () => {
       
       const docRef = await addDoc(collection(db, 'components'), componentData)
       console.log('✅ Component creation successful. Document ID:', docRef.id)
-    } catch (componentError) {
+    } catch (componentError: any) {
       console.error('❌ Component creation failed:', componentError)
-      if (componentError.code === 'permission-denied') {
+      if (componentError?.code === 'permission-denied') {
         console.log('💡 Solution: Ensure user is authenticated and authorId matches auth.uid')
         return false
       }

@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { useSearchParams } from "next/navigation"
-import { Search, Eye, Star, Download, Heart, Copy, Check, X } from "lucide-react"
+import { Search, Eye, Star, Download, Heart, Copy, Check, X, Code2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
@@ -11,24 +11,13 @@ import { Slider } from "@/components/ui/slider"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { SidebarNav } from "@/components/sidebar-nav"
 import { useAuth } from "@/contexts/auth-context"
 import { Component } from "@/lib/firebase/types"
 import { downloadComponent } from "@/lib/download-utils"
-import { 
-  collection,
-  query,
-  where,
-  orderBy,
-  limit,
-  getDocs,
-  addDoc,
-  deleteDoc,
-  doc,
-  updateDoc,
-  serverTimestamp,
-  increment
-} from "firebase/firestore"
+import { CodeEditor } from "@/components/code-editor"
+import { addDoc, collection, serverTimestamp, query, where, limit, getDocs } from "firebase/firestore"
 import { db } from "@/lib/firebase/config"
 import { toast } from "sonner"
 
@@ -342,17 +331,15 @@ export default function BrowsePage() {
       const isFavorited = favorites.includes(componentId)
       
       if (isFavorited) {
-        // Remove from favorites
-        const q = query(
-          collection(db, "favorites"),
-          where("userId", "==", user.uid),
-          where("componentId", "==", componentId)
+        // Remove from favorites via API
+        const response = await fetch(
+          `/api/favorites?userId=${user.uid}&componentId=${componentId}`,
+          { method: 'DELETE' }
         )
         
-        const querySnapshot = await getDocs(q)
-        querySnapshot.docs.forEach(async (docSnapshot) => {
-          await deleteDoc(docSnapshot.ref)
-        })
+        if (!response.ok) {
+          throw new Error('Failed to remove from favorites')
+        }
         
         setFavorites(prev => prev.filter(id => id !== componentId))
         setUserFavorites(prev => prev.filter(id => id !== componentId))
@@ -368,12 +355,21 @@ export default function BrowsePage() {
           body: JSON.stringify({ action: 'unlike' })
         })
       } else {
-        // Add to favorites
-        await addDoc(collection(db, "favorites"), {
-          userId: user.uid,
-          componentId,
-          createdAt: serverTimestamp()
+        // Add to favorites via API
+        const response = await fetch('/api/favorites', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            userId: user.uid,
+            componentId: componentId,
+          }),
         })
+        
+        if (!response.ok) {
+          throw new Error('Failed to add to favorites')
+        }
         
         setFavorites(prev => [...prev, componentId])
         setUserFavorites(prev => [...prev, componentId])
@@ -449,17 +445,17 @@ export default function BrowsePage() {
       <SidebarNav />
 
       {/* Main Content */}
-      <main className="flex-1">
+      <main className="flex-1 w-full overflow-x-hidden">
         {/* Enhanced Search Bar with Gradient */}
-        <div className="relative border-b border-purple-500/10 bg-gradient-to-r from-purple-50/50 via-blue-50/30 to-purple-50/50 dark:from-purple-950/20 dark:via-blue-950/10 dark:to-purple-950/20 px-6 py-6">
+        <div className="relative border-b border-purple-500/10 bg-gradient-to-r from-purple-50/50 via-blue-50/30 to-purple-50/50 dark:from-purple-950/20 dark:via-blue-950/10 dark:to-purple-950/20 px-4 sm:px-6 py-4 sm:py-6">
           <div className="absolute inset-0 bg-[url('/abstract-geometric-pattern.png')] opacity-5" />
           <div className="relative max-w-3xl mx-auto">
             <div className="relative group">
-              <Search className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-purple-600 group-focus-within:text-purple-500 transition-colors" />
+              <Search className="absolute left-3 sm:left-4 top-1/2 h-4 w-4 sm:h-5 sm:w-5 -translate-y-1/2 text-purple-600 group-focus-within:text-purple-500 transition-colors" />
               <Input
                 type="text"
-                placeholder="Search 10,000+ components..."
-                className="w-full pl-12 pr-4 h-14 text-base bg-white dark:bg-gray-900 dark:text-white text-gray-900 border-2 border-purple-500/20 focus:border-purple-500 focus:ring-4 focus:ring-purple-500/10 shadow-lg shadow-purple-500/5 transition-all duration-300"
+                placeholder="Search components..."
+                className="w-full pl-10 sm:pl-12 pr-4 h-12 sm:h-14 text-sm sm:text-base bg-white dark:bg-gray-900 dark:text-white text-gray-900 border-2 border-purple-500/20 focus:border-purple-500 focus:ring-4 focus:ring-purple-500/10 shadow-lg shadow-purple-500/5 transition-all duration-300"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
@@ -468,19 +464,19 @@ export default function BrowsePage() {
         </div>
 
         {/* Filters and Results */}
-        <div className="p-6">
-          <div className="flex flex-col lg:flex-row gap-8">
+        <div className="p-4 sm:p-6">
+          <div className="flex flex-col lg:flex-row gap-6 lg:gap-8">
             {/* Enhanced Filter Sidebar */}
-            <aside className="lg:w-72 space-y-4">
-              <Card className="p-6 backdrop-blur-sm bg-gradient-to-br from-white to-purple-50/30 dark:from-gray-900 dark:to-purple-950/10 border-purple-500/10 shadow-xl">
-                <div className="flex items-center gap-2 mb-6">
-                  <div className="h-8 w-1 bg-gradient-to-b from-purple-600 to-blue-600 rounded-full" />
-                  <h3 className="font-bold text-xl bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">Filters</h3>
+            <aside className="w-full lg:w-72 space-y-4">
+              <Card className="p-4 sm:p-6 backdrop-blur-sm bg-gradient-to-br from-white to-purple-50/30 dark:from-gray-900 dark:to-purple-950/10 border-purple-500/10 shadow-xl">
+                <div className="flex items-center gap-2 mb-4 sm:mb-6">
+                  <div className="h-6 sm:h-8 w-1 bg-gradient-to-b from-purple-600 to-blue-600 rounded-full" />
+                  <h3 className="font-bold text-lg sm:text-xl bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">Filters</h3>
                 </div>
 
                 {/* Framework Selector */}
-                <div className="space-y-3 mb-6 pb-6 border-b border-purple-500/10">
-                  <h4 className="text-sm font-semibold text-foreground/80 mb-3">Framework</h4>
+                <div className="space-y-2 sm:space-y-3 mb-4 sm:mb-6 pb-4 sm:pb-6 border-b border-purple-500/10">
+                  <h4 className="text-sm font-semibold text-foreground/80 mb-2 sm:mb-3">Framework</h4>
                   {["React", "Vue", "Svelte"].map((framework, index) => (
                     <div key={framework} className="flex items-center space-x-3 group">
                       <Checkbox
@@ -506,8 +502,8 @@ export default function BrowsePage() {
                 </div>
 
                 {/* Accessibility Score Slider */}
-                <div className="space-y-3 mb-6 pb-6 border-b border-purple-500/10">
-                  <h4 className="text-sm font-semibold text-foreground/80 mb-3">Min. Accessibility Score</h4>
+                <div className="space-y-2 sm:space-y-3 mb-4 sm:mb-6 pb-4 sm:pb-6 border-b border-purple-500/10">
+                  <h4 className="text-sm font-semibold text-foreground/80 mb-2 sm:mb-3">Min. Accessibility Score</h4>
                   <div className="space-y-3">
                     <Slider
                       value={accessibilityScore}
@@ -528,8 +524,8 @@ export default function BrowsePage() {
                 </div>
 
                 {/* Sort By */}
-                <div className="space-y-3">
-                  <h4 className="text-sm font-semibold text-foreground/80 mb-3">Sort By</h4>
+                <div className="space-y-2 sm:space-y-3">
+                  <h4 className="text-sm font-semibold text-foreground/80 mb-2 sm:mb-3">Sort By</h4>
                   <Select value={sortBy} onValueChange={setSortBy}>
                     <SelectTrigger className="border-purple-500/20 focus:ring-2 focus:ring-purple-500/20">
                       <SelectValue />
@@ -545,20 +541,20 @@ export default function BrowsePage() {
             </aside>
 
             {/* Enhanced Results Grid */}
-            <div className="flex-1">
-              <div className="mb-8">
-                <h2 className="text-3xl font-bold bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">
+            <div className="flex-1 w-full">
+              <div className="mb-6 sm:mb-8">
+                <h2 className="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">
                   {searchQuery ? "Search Results" : "All Components"}
                 </h2>
                 <div className="flex items-center gap-2 mt-2">
-                  <Badge className="bg-gradient-to-r from-purple-600 to-blue-600 text-white border-0 font-semibold">
+                  <Badge className="bg-gradient-to-r from-purple-600 to-blue-600 text-white border-0 font-semibold text-xs sm:text-sm">
                     {sortedComponents.length}
                   </Badge>
-                  <p className="text-muted-foreground">components found</p>
+                  <p className="text-sm sm:text-base text-muted-foreground">components found</p>
                 </div>
               </div>
 
-              <div className="grid gap-6 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
+              <div className="grid gap-4 sm:gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
                 {loading ? (
                   Array.from({ length: 6 }).map((_, index) => (
                     <div key={index} className="bg-gray-800 rounded-lg p-6 animate-pulse">
@@ -701,15 +697,15 @@ export default function BrowsePage() {
 
       {/* Preview Modal */}
       <Dialog open={showPreviewModal} onOpenChange={setShowPreviewModal}>
-        <DialogContent showCloseButton={false} className="max-w-4xl max-h-[90vh] overflow-y-auto bg-gray-900 border-gray-700">
+        <DialogContent showCloseButton={false} className="max-w-[95vw] sm:max-w-4xl lg:max-w-6xl max-h-[90vh] overflow-y-auto bg-gray-900 border-gray-700">
           <DialogHeader>
-            <DialogTitle className="text-2xl font-bold text-white flex items-center justify-between">
-              <span>{previewComponent?.title || previewComponent?.name}</span>
+            <DialogTitle className="text-xl sm:text-2xl font-bold text-white flex items-center justify-between pr-8">
+              <span className="truncate">{previewComponent?.title || previewComponent?.name}</span>
               <Button
                 variant="ghost"
                 size="icon"
                 onClick={() => setShowPreviewModal(false)}
-                className="text-gray-400 hover:text-white"
+                className="text-gray-400 hover:text-white absolute right-4 top-4"
               >
                 <X className="h-5 w-5" />
               </Button>
@@ -717,45 +713,111 @@ export default function BrowsePage() {
           </DialogHeader>
           
           {previewComponent && (
-            <div className="space-y-6">
-              {/* Component Image/Preview */}
-              <div className="relative aspect-video w-full overflow-hidden rounded-lg bg-gray-800">
-                {previewComponent.previewImage || previewComponent.thumbnail || previewComponent.thumbnailImage ? (
-                  <img
-                    src={previewComponent.previewImage || previewComponent.thumbnail || previewComponent.thumbnailImage}
-                    alt={previewComponent.title || previewComponent.name}
-                    className="w-full h-full object-contain"
-                  />
-                ) : (
-                  <div className="flex items-center justify-center h-full text-gray-500">
-                    <div className="text-center">
-                      <Eye className="h-16 w-16 mx-auto mb-2 opacity-50" />
-                      <p>No preview image available</p>
-                    </div>
+            <div className="space-y-4 sm:space-y-6">
+              {/* Tabs for Preview and Code */}
+              <Tabs defaultValue="preview" className="w-full">
+                <TabsList className="w-full grid grid-cols-2 bg-gray-800/50">
+                  <TabsTrigger value="preview" className="data-[state=active]:bg-purple-600">
+                    <Eye className="h-4 w-4 mr-2" />
+                    <span className="hidden sm:inline">Preview</span>
+                  </TabsTrigger>
+                  <TabsTrigger value="code" className="data-[state=active]:bg-purple-600">
+                    <Code2 className="h-4 w-4 mr-2" />
+                    <span className="hidden sm:inline">Code</span>
+                  </TabsTrigger>
+                </TabsList>
+
+                {/* Preview Tab */}
+                <TabsContent value="preview" className="space-y-4">
+                  {/* Component Image/Preview */}
+                  <div className="relative aspect-video w-full overflow-hidden rounded-lg bg-gray-800">
+                    {previewComponent.previewImage || previewComponent.thumbnail || previewComponent.thumbnailImage ? (
+                      <img
+                        src={previewComponent.previewImage || previewComponent.thumbnail || previewComponent.thumbnailImage}
+                        alt={previewComponent.title || previewComponent.name}
+                        className="w-full h-full object-contain"
+                      />
+                    ) : (
+                      <div className="flex items-center justify-center h-full text-gray-500">
+                        <div className="text-center">
+                          <Eye className="h-12 sm:h-16 w-12 sm:w-16 mx-auto mb-2 opacity-50" />
+                          <p className="text-sm sm:text-base">No preview image available</p>
+                        </div>
+                      </div>
+                    )}
                   </div>
-                )}
-              </div>
+                </TabsContent>
+
+                {/* Code Tab */}
+                <TabsContent value="code" className="space-y-4">
+                  <div className="relative">
+                    <div className="absolute top-2 right-2 z-10">
+                      <Button
+                        size="sm"
+                        onClick={() => handleCopy(previewComponent)}
+                        className="bg-purple-600 hover:bg-purple-700"
+                      >
+                        {copiedId === previewComponent.id ? (
+                          <>
+                            <Check className="h-4 w-4 mr-2" />
+                            Copied!
+                          </>
+                        ) : (
+                          <>
+                            <Copy className="h-4 w-4 mr-2" />
+                            Copy Code
+                          </>
+                        )}
+                      </Button>
+                    </div>
+                    {previewComponent.code ? (
+                      <div className="rounded-lg overflow-hidden border border-gray-700">
+                        <CodeEditor
+                          value={previewComponent.code}
+                          language={
+                            previewComponent.framework?.toLowerCase() === 'react' 
+                              ? 'typescript' 
+                              : previewComponent.framework?.toLowerCase() === 'vue'
+                              ? 'html'
+                              : 'javascript'
+                          }
+                          height="500px"
+                          readOnly={true}
+                          minimap={false}
+                        />
+                      </div>
+                    ) : (
+                      <div className="flex items-center justify-center h-64 bg-gray-800 rounded-lg border border-gray-700">
+                        <div className="text-center text-gray-500">
+                          <Code2 className="h-12 sm:h-16 w-12 sm:w-16 mx-auto mb-2 opacity-50" />
+                          <p className="text-sm sm:text-base">No code available</p>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </TabsContent>
+              </Tabs>
 
               {/* Component Info */}
               <div className="space-y-4">
                 <div>
-                  <h3 className="text-lg font-semibold text-white mb-2">Description</h3>
-                  <p className="text-gray-300">{previewComponent.description || "No description available"}</p>
+                  <h3 className="text-base sm:text-lg font-semibold text-white mb-2">Description</h3>
+                  <p className="text-sm sm:text-base text-gray-300">{previewComponent.description || "No description available"}</p>
                 </div>
 
                 <div className="flex flex-wrap gap-2">
-                  <Badge className="bg-purple-500 text-white">
+                  <Badge className="bg-purple-500 text-white text-xs sm:text-sm">
                     {previewComponent.category}
                   </Badge>
                   {previewComponent.framework && (
-                    <Badge variant="outline" className="text-gray-300 border-gray-600">
+                    <Badge variant="outline" className="text-gray-300 border-gray-600 text-xs sm:text-sm">
                       {previewComponent.framework}
                     </Badge>
                   )}
                 </div>
 
                 {/* Stats */}
-                <div className="flex gap-6 text-sm text-gray-400">
+                <div className="flex flex-wrap gap-4 sm:gap-6 text-xs sm:text-sm text-gray-400">
                   <div className="flex items-center gap-2">
                     <Eye className="h-4 w-4" />
                     <span>{previewComponent.stats?.views || previewComponent.views || 0} views</span>
@@ -771,34 +833,18 @@ export default function BrowsePage() {
                 </div>
 
                 {/* Action Buttons */}
-                <div className="flex gap-3 pt-4">
+                <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 pt-4">
                   <Button
                     onClick={() => handleDownload(previewComponent)}
-                    className="flex-1 bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700"
+                    className="flex-1 bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 text-sm sm:text-base"
                   >
                     <Download className="h-4 w-4 mr-2" />
                     Download ZIP
                   </Button>
                   <Button
-                    onClick={() => handleCopy(previewComponent)}
-                    className="flex-1 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700"
-                  >
-                    {copiedId === previewComponent.id ? (
-                      <>
-                        <Check className="h-4 w-4 mr-2" />
-                        Copied!
-                      </>
-                    ) : (
-                      <>
-                        <Copy className="h-4 w-4 mr-2" />
-                        Copy Code
-                      </>
-                    )}
-                  </Button>
-                  <Button
                     onClick={() => toggleFavorite(previewComponent.id)}
                     variant="outline"
-                    className="border-gray-600 hover:border-red-500 hover:bg-red-950/20"
+                    className="sm:flex-none border-gray-600 hover:border-red-500 hover:bg-red-950/20 text-sm sm:text-base"
                   >
                     <Heart
                       className={`h-4 w-4 mr-2 ${

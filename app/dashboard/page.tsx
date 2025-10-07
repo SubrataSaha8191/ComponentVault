@@ -64,6 +64,7 @@ import {
   ResponsiveContainer,
 } from "recharts"
 import { useAuth } from "@/contexts/auth-context"
+import { AuthGuard } from "@/components/auth-guard"
 import { 
   collection,
   query,
@@ -236,45 +237,18 @@ const getUserFavorites = async (userId: string): Promise<Component[]> => {
       return []
     }
 
-    // Get user's favorite component IDs
-    const favoritesQuery = query(
-      collection(db, "favorites"), 
-      where("userId", "==", userId)
-    )
-    const favoritesSnapshot = await getDocs(favoritesQuery)
-    const favoriteComponentIds = favoritesSnapshot.docs.map(doc => doc.data().componentId).filter(Boolean)
+    // Use API route for consistency with other pages
+    const response = await fetch(`/api/favorites?userId=${userId}`)
     
-    if (favoriteComponentIds.length === 0) {
-      return []
+    if (!response.ok) {
+      throw new Error(`Failed to fetch favorites: ${response.status}`)
     }
     
-    // Get favorite components - we'll need to query in batches due to Firestore's 'in' limit
-    const favorites: Component[] = []
-    const batchSize = 10 // Firestore 'in' limit
+    const favorites = await response.json()
+    return favorites || []
     
-    for (let i = 0; i < favoriteComponentIds.length; i += batchSize) {
-      const batch = favoriteComponentIds.slice(i, i + batchSize)
-      const componentsQuery = query(
-        collection(db, "components"),
-        where("__name__", "in", batch)
-      )
-      const componentsSnapshot = await getDocs(componentsQuery)
-      
-      componentsSnapshot.docs.forEach(doc => {
-        favorites.push({
-          id: doc.id,
-          ...doc.data()
-        } as Component)
-      })
-    }
-    
-    return favorites
   } catch (error: any) {
     console.error("Error fetching user favorites:", error)
-    // Provide more specific error message for permission errors
-    if (error?.code === 'permission-denied') {
-      console.error("Permission denied: Make sure Firestore rules allow reading favorites for authenticated users")
-    }
     return []
   }
 }
@@ -542,27 +516,6 @@ function DashboardContent() {
     )
   }
 
-  if (!user) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-background via-muted/20 to-background dark:from-slate-950 dark:via-slate-900 dark:to-black flex items-center justify-center">
-        <Card className="max-w-md mx-auto text-center bg-card/50 backdrop-blur-sm border-border">
-          <CardContent className="p-8">
-            <div className="w-16 h-16 bg-gradient-to-br from-amber-500 to-yellow-500 rounded-full flex items-center justify-center mx-auto mb-4">
-              <User className="h-8 w-8 text-black" />
-            </div>
-            <h2 className="text-xl font-semibold mb-2">Please Sign In</h2>
-            <p className="text-muted-foreground mb-4">You need to be authenticated to access your dashboard</p>
-            <Link href="/auth/signin">
-              <Button className="bg-amber-500 hover:bg-amber-600 text-black dark:text-black">
-                Sign In
-              </Button>
-            </Link>
-          </CardContent>
-        </Card>
-      </div>
-    )
-  }
-
   if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-background via-muted/20 to-background dark:from-slate-950 dark:via-slate-900 dark:to-black flex items-center justify-center">
@@ -587,6 +540,7 @@ function DashboardContent() {
   ]
 
   return (
+    <AuthGuard requireAuth={true}>
     <div className="min-h-screen bg-gradient-to-br from-background via-muted/20 to-background dark:from-slate-950 dark:via-slate-900 dark:to-black">
       {/* Premium Background Effects */}
       <div className="absolute inset-0 bg-[url('/abstract-geometric-pattern.png')] opacity-5 pointer-events-none" />
@@ -609,7 +563,7 @@ function DashboardContent() {
                 <div className="inline-flex items-center px-4 py-2 mb-4 rounded-full bg-gradient-to-r from-amber-500/20 to-yellow-500/20 border border-amber-400/30 backdrop-blur-sm shadow-lg shadow-amber-500/10">
                   <Sparkles className="h-4 w-4 mr-2 text-amber-500 dark:text-amber-400 animate-pulse" />
                   <span className="text-sm font-semibold bg-gradient-to-r from-amber-600 to-yellow-600 dark:from-amber-300 dark:to-yellow-300 bg-clip-text text-transparent">
-                    Welcome back, {user.displayName || 'Creator'}!
+                    Welcome back, {user?.displayName || 'Creator'}!
                   </span>
                 </div>
                 
@@ -890,7 +844,9 @@ function DashboardContent() {
                     component={component} 
                     onUpdate={() => {
                       // Reload components after update
-                      getUserComponents(user.uid).then(setUserComponents)
+                      if (user?.uid) {
+                        getUserComponents(user.uid).then(setUserComponents)
+                      }
                     }}
                   />
                 ))
@@ -934,7 +890,9 @@ function DashboardContent() {
             <SubmissionForm 
               onSuccess={() => {
                 // Reload components after successful submission
-                getUserComponents(user.uid).then(setUserComponents)
+                if (user?.uid) {
+                  getUserComponents(user.uid).then(setUserComponents)
+                }
                 setActiveTab("my-components")
               }} 
             />
@@ -952,6 +910,7 @@ function DashboardContent() {
         </Tabs>
       </div>
     </div>
+    </AuthGuard>
   )
 }
 
@@ -1044,7 +1003,7 @@ function ComponentCard({ component, onUpdate }: { component: Component; onUpdate
             className="flex-1 hover:bg-amber-500 hover:text-black hover:border-amber-400 transition-all"
             asChild
           >
-            <Link href={`/components/${component.id}/edit`}>
+            <Link href={`/component/${component.id}/edit`}>
               <Edit className="h-4 w-4 mr-1" />
               Edit
             </Link>

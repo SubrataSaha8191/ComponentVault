@@ -1,6 +1,9 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
+import { useParams } from "next/navigation"
+import { useAuth } from "@/contexts/auth-context"
+import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -29,173 +32,77 @@ import {
   Star,
   ThumbsUp,
   ThumbsDown,
+  Loader2,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 
-// Mock component data
-const componentData = {
-  id: "animated-card",
-  name: "Animated Card",
-  description: "A beautiful card component with smooth hover animations and glassmorphism effects",
-  category: "Cards",
-  tags: ["animation", "glassmorphism", "hover-effects", "modern"],
-  accessibilityScore: 98,
-  accessibilityBreakdown: {
-    "Keyboard Navigation": 100,
-    "Screen Reader Support": 98,
-    "Color Contrast": 95,
-    "Focus Indicators": 100,
-    "ARIA Labels": 98,
-  },
-  downloads: 12543,
-  rating: 4.8,
-  frameworks: ["React", "Vue", "Svelte", "HTML"],
-  version: "1.2.0",
-  lastUpdated: "2024-01-15",
-  author: "ComponentVault Team",
+interface Component {
+  id: string;
+  name: string;
+  description: string;
+  category: string;
+  tags: string[];
+  accessibilityScore?: number;
+  accessibilityBreakdown?: Record<string, number>;
+  downloads?: number;
+  views?: number;
+  rating?: number;
+  frameworks?: string[];
+  version?: string;
+  lastUpdated?: string;
+  author?: string;
+  stats?: {
+    views: number;
+    downloads: number;
+    likes: number;
+    rating: number;
+  };
+  code?: {
+    jsx?: string;
+    html?: string;
+    css?: string;
+    typescript?: string;
+  };
 }
 
-const codeExamples = {
-  jsx: `import { Card } from '@/components/ui/card'
-
-export function AnimatedCard() {
-  return (
-    <Card className="group relative overflow-hidden rounded-xl border border-white/10 bg-gradient-to-br from-purple-500/10 to-blue-500/10 p-6 backdrop-blur-sm transition-all duration-300 hover:scale-105 hover:border-white/20 hover:shadow-2xl">
-      <div className="absolute inset-0 bg-gradient-to-br from-purple-500/20 to-blue-500/20 opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
-      <div className="relative z-10">
-        <h3 className="text-xl font-bold text-white mb-2">Card Title</h3>
-        <p className="text-gray-300">Beautiful animated card with glassmorphism effect.</p>
-      </div>
-    </Card>
-  )
-}`,
-  html: `<div class="group relative overflow-hidden rounded-xl border border-white/10 bg-gradient-to-br from-purple-500/10 to-blue-500/10 p-6 backdrop-blur-sm transition-all duration-300 hover:scale-105 hover:border-white/20 hover:shadow-2xl">
-  <div class="absolute inset-0 bg-gradient-to-br from-purple-500/20 to-blue-500/20 opacity-0 transition-opacity duration-300 group-hover:opacity-100"></div>
-  <div class="relative z-10">
-    <h3 class="text-xl font-bold text-white mb-2">Card Title</h3>
-    <p class="text-gray-300">Beautiful animated card with glassmorphism effect.</p>
-  </div>
-</div>`,
-  css: `.animated-card {
-  position: relative;
-  overflow: hidden;
-  border-radius: 0.75rem;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  background: linear-gradient(to bottom right, rgba(139, 92, 246, 0.1), rgba(59, 130, 246, 0.1));
-  padding: 1.5rem;
-  backdrop-filter: blur(8px);
-  transition: all 0.3s ease;
+interface Review {
+  id: string;
+  userName: string;
+  userAvatar?: string;
+  rating: number;
+  comment: string;
+  helpful: number;
+  notHelpful: number;
+  createdAt: any;
+  // Legacy fields for compatibility
+  author?: string;
+  avatar?: string;
+  date?: string;
 }
 
-.animated-card:hover {
-  transform: scale(1.05);
-  border-color: rgba(255, 255, 255, 0.2);
-  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
-}
-
-.animated-card::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(to bottom right, rgba(139, 92, 246, 0.2), rgba(59, 130, 246, 0.2));
-  opacity: 0;
-  transition: opacity 0.3s ease;
-}
-
-.animated-card:hover::before {
-  opacity: 1;
-}`,
-  typescript: `import { Card } from '@/components/ui/card'
-import { ReactNode } from 'react'
-
-interface AnimatedCardProps {
-  title: string
-  description: string
-  children?: ReactNode
-  className?: string
-}
-
-export function AnimatedCard({ title, description, children, className }: AnimatedCardProps) {
-  return (
-    <Card className={cn(
-      "group relative overflow-hidden rounded-xl border border-white/10",
-      "bg-gradient-to-br from-purple-500/10 to-blue-500/10 p-6",
-      "backdrop-blur-sm transition-all duration-300",
-      "hover:scale-105 hover:border-white/20 hover:shadow-2xl",
-      className
-    )}>
-      <div className="absolute inset-0 bg-gradient-to-br from-purple-500/20 to-blue-500/20 opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
-      <div className="relative z-10">
-        <h3 className="text-xl font-bold text-white mb-2">{title}</h3>
-        <p className="text-gray-300">{description}</p>
-        {children}
-      </div>
-    </Card>
-  )
-}
-`,
-}
-
-// Mock reviews data
-const reviewsData = {
-  averageRating: 4.8,
-  totalReviews: 234,
-  ratingBreakdown: {
-    5: 180,
-    4: 35,
-    3: 12,
-    2: 5,
-    1: 2,
-  },
-  reviews: [
-    {
-      id: 1,
-      author: "Sarah Chen",
-      avatar: "/diverse-avatars.png",
-      rating: 5,
-      date: "2024-01-15",
-      helpful: 24,
-      notHelpful: 2,
-      comment:
-        "Absolutely love this component! The animations are smooth and the glassmorphism effect is perfect. Easy to customize and works great with my project.",
-    },
-    {
-      id: 2,
-      author: "Michael Rodriguez",
-      avatar: "/diverse-avatars.png",
-      rating: 5,
-      date: "2024-01-12",
-      helpful: 18,
-      notHelpful: 1,
-      comment:
-        "Best card component I've found. The accessibility score is impressive and it's very well documented. Highly recommend!",
-    },
-    {
-      id: 3,
-      author: "Emma Thompson",
-      avatar: "/diverse-avatars.png",
-      rating: 4,
-      date: "2024-01-10",
-      helpful: 12,
-      notHelpful: 0,
-      comment:
-        "Great component overall. Would love to see more color scheme options out of the box, but the customization panel makes it easy to adjust.",
-    },
-    {
-      id: 4,
-      author: "David Kim",
-      avatar: "/diverse-avatars.png",
-      rating: 5,
-      date: "2024-01-08",
-      helpful: 15,
-      notHelpful: 1,
-      comment:
-        "Perfect for my landing page. The hover effects are exactly what I needed. Performance is excellent too!",
-    },
-  ],
+interface ReviewsData {
+  reviews: Review[];
+  aggregates: {
+    totalReviews: number;
+    averageRating: number;
+    ratingBreakdown: Record<number, number>;
+  };
 }
 
 export default function ComponentDetailPage() {
+  const params = useParams()
+  const { user } = useAuth()
+  const componentId = params.id as string
+
+  // Loading states
+  const [isLoading, setIsLoading] = useState(true)
+  const [isLoadingReviews, setIsLoadingReviews] = useState(true)
+  
+  // Data states
+  const [componentData, setComponentData] = useState<Component | null>(null)
+  const [reviewsData, setReviewsData] = useState<ReviewsData | null>(null)
+  
+  // UI states
   const [selectedFramework, setSelectedFramework] = useState("React")
   const [previewMode, setPreviewMode] = useState<"desktop" | "tablet" | "mobile">("desktop")
   const [isDarkMode, setIsDarkMode] = useState(true)
@@ -214,7 +121,88 @@ export default function ComponentDetailPage() {
   const [hoverRating, setHoverRating] = useState(0)
   const [reviewText, setReviewText] = useState("")
   const [reviewSort, setReviewSort] = useState<"newest" | "helpful">("helpful")
-  const [helpfulVotes, setHelpfulVotes] = useState<Record<number, "up" | "down" | null>>({})
+  const [helpfulVotes, setHelpfulVotes] = useState<Record<string, "up" | "down" | null>>({})
+  const [isSubmittingReview, setIsSubmittingReview] = useState(false)
+
+  // Fetch component data
+  useEffect(() => {
+    const fetchComponentData = async () => {
+      try {
+        setIsLoading(true)
+        const response = await fetch(`/api/components/${componentId}`)
+        
+        if (!response.ok) {
+          throw new Error('Failed to fetch component')
+        }
+        
+        const data = await response.json()
+        setComponentData(data)
+        
+        // Set framework from component data if available
+        if (data.frameworks && data.frameworks.length > 0) {
+          setSelectedFramework(data.frameworks[0])
+        }
+        
+      } catch (error) {
+        console.error('Error fetching component:', error)
+        toast.error('Failed to load component details')
+      } finally {
+        setIsLoading(false)
+      }
+    }
+
+    if (componentId) {
+      fetchComponentData()
+    }
+  }, [componentId, toast])
+
+  // Fetch reviews data
+  useEffect(() => {
+    const fetchReviewsData = async () => {
+      try {
+        setIsLoadingReviews(true)
+        const response = await fetch(`/api/reviews?componentId=${componentId}`)
+        
+        if (!response.ok) {
+          throw new Error('Failed to fetch reviews')
+        }
+        
+        const data = await response.json()
+        setReviewsData(data)
+        
+      } catch (error) {
+        console.error('Error fetching reviews:', error)
+        // Don't show error toast for reviews as it's not critical
+      } finally {
+        setIsLoadingReviews(false)
+      }
+    }
+
+    if (componentId) {
+      fetchReviewsData()
+    }
+  }, [componentId])
+
+  // Default code examples (fallback if not in component data)
+  const defaultCodeExamples = {
+    jsx: `// Code example will be available when component data loads
+export function Component() {
+  return <div>Loading...</div>
+}`,
+    html: `<!-- HTML example will be available when component data loads -->
+<div>Loading...</div>`,
+    css: `/* CSS example will be available when component data loads */
+.component {
+  display: block;
+}`,
+    typescript: `// TypeScript example will be available when component data loads
+interface ComponentProps {}
+export function Component(props: ComponentProps) {
+  return <div>Loading...</div>
+}`,
+  }
+
+  const codeExamples = componentData?.code || defaultCodeExamples
 
   const previewSizes = {
     desktop: "w-full",
@@ -222,21 +210,33 @@ export default function ComponentDetailPage() {
     mobile: "w-[375px] mx-auto",
   }
 
+  const sortedReviews = reviewsData?.reviews ? [...reviewsData.reviews].sort((a, b) => {
+    if (reviewSort === "newest") {
+      return new Date(b.createdAt?.toDate ? b.createdAt.toDate() : b.createdAt).getTime() - 
+             new Date(a.createdAt?.toDate ? a.createdAt.toDate() : a.createdAt).getTime()
+    }
+    return b.helpful - a.helpful
+  }) : []
+
   const handleCopyCode = () => {
     const code = codeExamples[selectedCodeTab as keyof typeof codeExamples]
-    navigator.clipboard.writeText(code)
-    setCopiedCode(true)
-    setTimeout(() => setCopiedCode(false), 2000)
+    if (code) {
+      navigator.clipboard.writeText(code)
+      setCopiedCode(true)
+      setTimeout(() => setCopiedCode(false), 2000)
+    }
   }
 
   const handleDownloadCode = () => {
     const code = codeExamples[selectedCodeTab as keyof typeof codeExamples]
+    if (!code) return
+    
     const extensions = { jsx: "jsx", html: "html", css: "css", typescript: "tsx" }
     const blob = new Blob([code], { type: "text/plain" })
     const url = URL.createObjectURL(blob)
     const a = document.createElement("a")
     a.href = url
-    a.download = `animated-card.${extensions[selectedCodeTab as keyof typeof extensions]}`
+    a.download = `${componentData?.name || 'component'}.${extensions[selectedCodeTab as keyof typeof extensions]}`
     a.click()
     URL.revokeObjectURL(url)
   }
@@ -247,30 +247,125 @@ export default function ComponentDetailPage() {
     alert("Link copied to clipboard!")
   }
 
-  const handleSubmitReview = () => {
-    if (userRating === 0) {
-      alert("Please select a rating")
+  const handleSubmitReview = async () => {
+    if (!user) {
+      toast.error('Please sign in to submit a review')
       return
     }
-    console.log("Submitting review:", { rating: userRating, comment: reviewText })
-    setUserRating(0)
-    setReviewText("")
-    alert("Review submitted successfully!")
+
+    if (userRating === 0) {
+      toast.error('Please select a rating')
+      return
+    }
+
+    try {
+      setIsSubmittingReview(true)
+      const idToken = await user.getIdToken()
+      
+      const response = await fetch('/api/reviews', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${idToken}`,
+        },
+        body: JSON.stringify({
+          componentId,
+          userId: user.uid,
+          userName: user.displayName || 'Anonymous',
+          userAvatar: user.photoURL,
+          rating: userRating,
+          comment: reviewText,
+        }),
+      })
+
+      if (!response.ok) {
+        const error = await response.json()
+        throw new Error(error.error || 'Failed to submit review')
+      }
+
+      toast.success('Review submitted successfully!')
+      setUserRating(0)
+      setReviewText('')
+      
+      // Refresh reviews data
+      const reviewsResponse = await fetch(`/api/reviews?componentId=${componentId}`)
+      if (reviewsResponse.ok) {
+        const updatedReviews = await reviewsResponse.json()
+        setReviewsData(updatedReviews)
+      }
+      
+    } catch (error: any) {
+      console.error('Error submitting review:', error)
+      toast.error(error.message || 'Failed to submit review')
+    } finally {
+      setIsSubmittingReview(false)
+    }
   }
 
-  const handleHelpfulVote = (reviewId: number, vote: "up" | "down") => {
+  const handleHelpfulVote = async (reviewId: string, vote: "up" | "down") => {
+    if (!user) {
+      toast.error('Please sign in to vote')
+      return
+    }
+
+    // Optimistic update
     setHelpfulVotes((prev) => ({
       ...prev,
       [reviewId]: prev[reviewId] === vote ? null : vote,
     }))
+
+    try {
+      const idToken = await user.getIdToken()
+      const action = vote === "up" ? "helpful" : "notHelpful"
+      
+      const response = await fetch('/api/reviews', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${idToken}`,
+        },
+        body: JSON.stringify({
+          reviewId,
+          action,
+          userId: user.uid,
+        }),
+      })
+
+      if (!response.ok) {
+        // Revert optimistic update
+        setHelpfulVotes((prev) => ({
+          ...prev,
+          [reviewId]: null,
+        }))
+        
+        const error = await response.json()
+        throw new Error(error.error || 'Failed to vote')
+      }
+
+      // Refresh reviews to get updated counts
+      const reviewsResponse = await fetch(`/api/reviews?componentId=${componentId}`)
+      if (reviewsResponse.ok) {
+        const updatedReviews = await reviewsResponse.json()
+        setReviewsData(updatedReviews)
+      }
+
+    } catch (error: any) {
+      console.error('Error voting:', error)
+      toast.error(error.message || 'Failed to record vote')
+    }
   }
 
-  const sortedReviews = [...reviewsData.reviews].sort((a, b) => {
-    if (reviewSort === "newest") {
-      return new Date(b.date).getTime() - new Date(a.date).getTime()
-    }
-    return b.helpful - a.helpful
-  })
+  // Loading state
+  if (isLoading || !componentData) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-gray-950 via-gray-900 to-gray-950 flex items-center justify-center">
+        <div className="flex items-center gap-3 text-white">
+          <Loader2 className="w-6 h-6 animate-spin" />
+          <span>Loading component...</span>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-950 via-gray-900 to-gray-950">
@@ -303,11 +398,11 @@ export default function ComponentDetailPage() {
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="text-gray-400">Downloads</span>
-                  <span className="text-white font-medium">{componentData.downloads.toLocaleString()}</span>
+                  <span className="text-white font-medium">{(componentData.downloads || componentData.stats?.downloads || 0).toLocaleString()}</span>
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="text-gray-400">Rating</span>
-                  <span className="text-white font-medium">⭐ {componentData.rating}</span>
+                  <span className="text-white font-medium">⭐ {componentData.rating || componentData.stats?.rating || 'N/A'}</span>
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="text-gray-400">Updated</span>
@@ -324,7 +419,7 @@ export default function ComponentDetailPage() {
               </div>
               <Tabs value={selectedFramework} onValueChange={setSelectedFramework} className="w-full">
                 <TabsList className="grid w-full grid-cols-2 bg-white/5">
-                  {componentData.frameworks.map((framework) => (
+                  {(componentData.frameworks || ['React', 'HTML']).slice(0, 4).map((framework) => (
                     <TabsTrigger
                       key={framework}
                       value={framework}
@@ -364,19 +459,25 @@ export default function ComponentDetailPage() {
                       strokeWidth="8"
                       fill="none"
                       strokeDasharray={`${2 * Math.PI * 56}`}
-                      strokeDashoffset={`${2 * Math.PI * 56 * (1 - componentData.accessibilityScore / 100)}`}
+                      strokeDashoffset={`${2 * Math.PI * 56 * (1 - (componentData.accessibilityScore || 95) / 100)}`}
                       className="text-emerald-400 transition-all duration-1000"
                       strokeLinecap="round"
                     />
                   </svg>
                   <div className="absolute inset-0 flex items-center justify-center">
-                    <span className="text-3xl font-bold text-white">{componentData.accessibilityScore}</span>
+                    <span className="text-3xl font-bold text-white">{componentData.accessibilityScore || 95}</span>
                   </div>
                 </div>
               </div>
 
               <div className="space-y-3">
-                {Object.entries(componentData.accessibilityBreakdown).map(([key, value]) => (
+                {Object.entries(componentData.accessibilityBreakdown || {
+                  "Keyboard Navigation": 100,
+                  "Screen Reader Support": 98,
+                  "Color Contrast": 95,
+                  "Focus Indicators": 100,
+                  "ARIA Labels": 98,
+                }).map(([key, value]) => (
                   <div key={key}>
                     <div className="flex items-center justify-between mb-1 text-sm">
                       <span className="text-gray-400">{key}</span>
@@ -704,28 +805,33 @@ export default function ComponentDetailPage() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8 pb-8 border-b border-white/10">
                 {/* Average Rating */}
                 <div className="flex flex-col items-center justify-center">
-                  <div className="text-6xl font-bold text-white mb-2">{reviewsData.averageRating}</div>
+                  <div className="text-6xl font-bold text-white mb-2">
+                    {reviewsData?.aggregates?.averageRating?.toFixed(1) || 'N/A'}
+                  </div>
                   <div className="flex items-center gap-1 mb-2">
                     {[1, 2, 3, 4, 5].map((star) => (
                       <Star
                         key={star}
                         className={cn(
                           "w-6 h-6",
-                          star <= Math.round(reviewsData.averageRating)
+                          star <= Math.round(reviewsData?.aggregates?.averageRating || 0)
                             ? "fill-yellow-400 text-yellow-400"
                             : "text-gray-600",
                         )}
                       />
                     ))}
                   </div>
-                  <p className="text-gray-400 text-sm">{reviewsData.totalReviews} reviews</p>
+                  <p className="text-gray-400 text-sm">
+                    {reviewsData?.aggregates?.totalReviews || 0} reviews
+                  </p>
                 </div>
 
                 {/* Rating Breakdown */}
                 <div className="space-y-2">
                   {[5, 4, 3, 2, 1].map((rating) => {
-                    const count = reviewsData.ratingBreakdown[rating as keyof typeof reviewsData.ratingBreakdown]
-                    const percentage = (count / reviewsData.totalReviews) * 100
+                    const count = reviewsData?.aggregates?.ratingBreakdown?.[rating] || 0
+                    const total = reviewsData?.aggregates?.totalReviews || 1
+                    const percentage = (count / total) * 100
                     return (
                       <div key={rating} className="flex items-center gap-3">
                         <div className="flex items-center gap-1 w-16">
@@ -784,9 +890,17 @@ export default function ComponentDetailPage() {
 
                   <Button
                     onClick={handleSubmitReview}
-                    className="bg-gradient-to-r from-purple-500 to-blue-500 hover:from-purple-600 hover:to-blue-600"
+                    disabled={isSubmittingReview || userRating === 0}
+                    className="bg-gradient-to-r from-purple-500 to-blue-500 hover:from-purple-600 hover:to-blue-600 disabled:opacity-50"
                   >
-                    Submit Review
+                    {isSubmittingReview ? (
+                      <>
+                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                        Submitting...
+                      </>
+                    ) : (
+                      'Submit Review'
+                    )}
                   </Button>
                 </div>
               </div>
@@ -794,7 +908,9 @@ export default function ComponentDetailPage() {
               {/* Reviews List */}
               <div>
                 <div className="flex items-center justify-between mb-4">
-                  <h4 className="text-white font-semibold">Reviews ({reviewsData.totalReviews})</h4>
+                  <h4 className="text-white font-semibold">
+                    Reviews ({reviewsData?.aggregates?.totalReviews || 0})
+                  </h4>
                   <div className="flex items-center gap-2">
                     <span className="text-sm text-gray-400">Sort by:</span>
                     <Button
@@ -822,80 +938,103 @@ export default function ComponentDetailPage() {
                   </div>
                 </div>
 
-                <div className="space-y-4">
-                  {sortedReviews.map((review) => (
-                    <div key={review.id} className="bg-white/5 rounded-lg p-4 border border-white/10">
-                      <div className="flex items-start gap-4">
-                        <img
-                          src={review.avatar || "/placeholder.svg"}
-                          alt={review.author}
-                          className="w-10 h-10 rounded-full border border-white/10"
-                        />
-                        <div className="flex-1">
-                          <div className="flex items-center justify-between mb-2">
-                            <div>
-                              <h5 className="text-white font-medium">{review.author}</h5>
-                              <div className="flex items-center gap-2">
-                                <div className="flex items-center gap-1">
-                                  {[1, 2, 3, 4, 5].map((star) => (
-                                    <Star
-                                      key={star}
-                                      className={cn(
-                                        "w-4 h-4",
-                                        star <= review.rating ? "fill-yellow-400 text-yellow-400" : "text-gray-600",
-                                      )}
-                                    />
-                                  ))}
+                {/* Scrollable Reviews Container */}
+                <div className="h-[400px] overflow-y-auto space-y-4 pr-2">
+                  {sortedReviews.length > 0 ? (
+                    sortedReviews.map((review) => (
+                      <div key={review.id} className="bg-white/5 rounded-lg p-4 border border-white/10">
+                        <div className="flex items-start gap-4">
+                          <img
+                            src={review.userAvatar || review.avatar || "/placeholder.svg"}
+                            alt={review.userName || review.author || 'User'}
+                            className="w-10 h-10 rounded-full border border-white/10"
+                          />
+                          <div className="flex-1">
+                            <div className="flex items-center justify-between mb-2">
+                              <div>
+                                <h5 className="text-white font-medium">
+                                  {review.userName || review.author || 'Anonymous'}
+                                </h5>
+                                <div className="flex items-center gap-2">
+                                  <div className="flex items-center gap-1">
+                                    {[1, 2, 3, 4, 5].map((star) => (
+                                      <Star
+                                        key={star}
+                                        className={cn(
+                                          "w-4 h-4",
+                                          star <= review.rating ? "fill-yellow-400 text-yellow-400" : "text-gray-600",
+                                        )}
+                                      />
+                                    ))}
+                                  </div>
+                                  <span className="text-sm text-gray-400">
+                                    {review.date || 
+                                     (review.createdAt?.toDate ? 
+                                      review.createdAt.toDate().toLocaleDateString() : 
+                                      new Date(review.createdAt).toLocaleDateString())}
+                                  </span>
                                 </div>
-                                <span className="text-sm text-gray-400">{review.date}</span>
                               </div>
                             </div>
-                          </div>
-                          <p className="text-gray-300 mb-3 leading-relaxed">{review.comment}</p>
-                          <div className="flex items-center gap-4">
-                            <span className="text-sm text-gray-400">Was this helpful?</span>
-                            <div className="flex items-center gap-2">
-                              <Button
-                                size="sm"
-                                variant="ghost"
-                                onClick={() => handleHelpfulVote(review.id, "up")}
-                                className={cn(
-                                  "h-8 gap-1",
-                                  helpfulVotes[review.id] === "up"
-                                    ? "bg-emerald-500/20 text-emerald-300"
-                                    : "text-gray-400 hover:text-emerald-300",
-                                )}
-                              >
-                                <ThumbsUp className="w-4 h-4" />
-                                <span>{review.helpful + (helpfulVotes[review.id] === "up" ? 1 : 0)}</span>
-                              </Button>
-                              <Button
-                                size="sm"
-                                variant="ghost"
-                                onClick={() => handleHelpfulVote(review.id, "down")}
-                                className={cn(
-                                  "h-8 gap-1",
-                                  helpfulVotes[review.id] === "down"
-                                    ? "bg-red-500/20 text-red-300"
-                                    : "text-gray-400 hover:text-red-300",
-                                )}
-                              >
-                                <ThumbsDown className="w-4 h-4" />
-                                <span>{review.notHelpful + (helpfulVotes[review.id] === "down" ? 1 : 0)}</span>
-                              </Button>
+                            <p className="text-gray-300 mb-3 leading-relaxed">{review.comment}</p>
+                            <div className="flex items-center gap-4">
+                              <span className="text-sm text-gray-400">Was this helpful?</span>
+                              <div className="flex items-center gap-2">
+                                <Button
+                                  size="sm"
+                                  variant="ghost"
+                                  onClick={() => handleHelpfulVote(review.id, "up")}
+                                  className={cn(
+                                    "h-8 gap-1",
+                                    helpfulVotes[review.id] === "up"
+                                      ? "bg-emerald-500/20 text-emerald-300"
+                                      : "text-gray-400 hover:text-emerald-300",
+                                  )}
+                                >
+                                  <ThumbsUp className="w-4 h-4" />
+                                  <span>{review.helpful + (helpfulVotes[review.id] === "up" ? 1 : 0)}</span>
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  variant="ghost"
+                                  onClick={() => handleHelpfulVote(review.id, "down")}
+                                  className={cn(
+                                    "h-8 gap-1",
+                                    helpfulVotes[review.id] === "down"
+                                      ? "bg-red-500/20 text-red-300"
+                                      : "text-gray-400 hover:text-red-300",
+                                  )}
+                                >
+                                  <ThumbsDown className="w-4 h-4" />
+                                  <span>{review.notHelpful + (helpfulVotes[review.id] === "down" ? 1 : 0)}</span>
+                                </Button>
+                              </div>
                             </div>
                           </div>
                         </div>
                       </div>
+                    ))
+                  ) : (
+                    <div className="flex items-center justify-center h-32">
+                      {isLoadingReviews ? (
+                        <div className="flex items-center gap-2 text-gray-400">
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                          <span>Loading reviews...</span>
+                        </div>
+                      ) : (
+                        <p className="text-gray-400">No reviews yet. Be the first to review!</p>
+                      )}
                     </div>
-                  ))}
+                  )}
                 </div>
               </div>
             </Card>
 
             {/* Comments Section */}
             <Card className="border-white/10 bg-white/5 backdrop-blur-sm p-6">
-              <CommentsSection componentId={componentData.id} />
+              <div className="h-[500px] overflow-y-auto pr-2">
+                <CommentsSection componentId={componentData.id} />
+              </div>
             </Card>
           </div>
         </div>

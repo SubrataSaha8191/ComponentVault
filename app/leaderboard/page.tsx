@@ -474,26 +474,26 @@ export default function LeaderboardPage() {
 
         {/* Leaderboard Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="grid w-full grid-cols-4">
-            <TabsTrigger value="contributors" className="gap-2">
-              <Trophy className="h-4 w-4" />
-              <span className="hidden sm:inline">Top Contributors</span>
-              <span className="sm:hidden">Contributors</span>
+          <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4 gap-1 sm:gap-0 h-auto p-1">
+            <TabsTrigger value="contributors" className="gap-1 sm:gap-2 text-xs sm:text-sm py-2.5 sm:py-2 px-2 sm:px-3">
+              <Trophy className="h-3 w-3 sm:h-4 sm:w-4" />
+              <span className="hidden md:inline">Top Contributors</span>
+              <span className="md:hidden">Contributors</span>
             </TabsTrigger>
-            <TabsTrigger value="downloads" className="gap-2">
-              <Download className="h-4 w-4" />
-              <span className="hidden sm:inline">Most Downloads</span>
-              <span className="sm:hidden">Downloads</span>
+            <TabsTrigger value="downloads" className="gap-1 sm:gap-2 text-xs sm:text-sm py-2.5 sm:py-2 px-2 sm:px-3">
+              <Download className="h-3 w-3 sm:h-4 sm:w-4" />
+              <span className="hidden md:inline">Most Downloads</span>
+              <span className="md:hidden">Downloads</span>
             </TabsTrigger>
-            <TabsTrigger value="rated" className="gap-2">
-              <Star className="h-4 w-4" />
-              <span className="hidden sm:inline">Highest Rated</span>
-              <span className="sm:hidden">Rated</span>
+            <TabsTrigger value="rated" className="gap-1 sm:gap-2 text-xs sm:text-sm py-2.5 sm:py-2 px-2 sm:px-3">
+              <Star className="h-3 w-3 sm:h-4 sm:w-4" />
+              <span className="hidden md:inline">Highest Rated</span>
+              <span className="md:hidden">Rated</span>
             </TabsTrigger>
-            <TabsTrigger value="rising" className="gap-2">
-              <Sparkles className="h-4 w-4" />
-              <span className="hidden sm:inline">Rising Stars</span>
-              <span className="sm:hidden">Rising</span>
+            <TabsTrigger value="rising" className="gap-1 sm:gap-2 text-xs sm:text-sm py-2.5 sm:py-2 px-2 sm:px-3">
+              <Sparkles className="h-3 w-3 sm:h-4 sm:w-4" />
+              <span className="hidden md:inline">Rising Stars</span>
+              <span className="md:hidden">Rising</span>
             </TabsTrigger>
           </TabsList>
 
