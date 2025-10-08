@@ -583,22 +583,49 @@ export default function BrowsePage() {
                         />
                         {/* Gradient Overlay on Hover */}
                         <div className="absolute inset-0 bg-gradient-to-t from-purple-900/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-                        
-                        <div className="absolute top-2 right-2">
-                          <Badge
-                            className="bg-gradient-to-r from-emerald-500 to-green-600 text-white border-0 font-semibold shadow-lg"
-                          >
-                            A11y: 95
-                          </Badge>
-                        </div>
                       </div>
 
                       {/* Content */}
                       <div className="p-5 space-y-3">
                         <div>
-                          <h3 className="font-bold text-lg group-hover:text-purple-600 transition-colors duration-300">
-                            {component.title || component.name}
-                          </h3>
+                          <div className="flex items-center justify-between mb-1">
+                            <h3 className="font-bold text-lg group-hover:text-purple-600 transition-colors duration-300">
+                              {component.title || component.name}
+                            </h3>
+                          </div>
+                          
+                          {/* Author Info with Follow Button */}
+                          <div className="flex items-center justify-between mb-2">
+                            <div className="flex items-center gap-2">
+                              {component.authorAvatar && (
+                                <img 
+                                  src={component.authorAvatar} 
+                                  alt={component.authorName}
+                                  className="w-5 h-5 rounded-full border border-purple-500/30"
+                                />
+                              )}
+                              <span className="text-xs text-muted-foreground">
+                                by {component.authorName || 'Anonymous'}
+                              </span>
+                            </div>
+                            
+                            {/* Follow Button - Only show if not own component */}
+                            {user && component.authorId !== user.uid && (
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  // TODO: Implement follow functionality
+                                  toast.info('Follow feature coming soon!');
+                                }}
+                                className="h-6 text-xs px-2 hover:bg-purple-50 dark:hover:bg-purple-950/20 transition-colors"
+                              >
+                                Follow
+                              </Button>
+                            )}
+                          </div>
+                          
                           <p className="text-sm text-muted-foreground mt-1 line-clamp-2">{component.description}</p>
                         </div>
 

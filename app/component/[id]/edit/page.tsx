@@ -551,11 +551,21 @@ export default function EditComponentPage() {
                   </div>
                 )}
                 
-                <Input
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => document.getElementById('thumbnail-upload')?.click()}
+                  className="w-full justify-start"
+                >
+                  <Upload className="h-4 w-4 mr-2" />
+                  {thumbnailPreview ? 'Change File' : 'Choose File'}
+                </Button>
+                <input
+                  id="thumbnail-upload"
                   type="file"
                   accept="image/*"
                   onChange={handleThumbnailChange}
-                  className="cursor-pointer"
+                  className="hidden"
                 />
                 <p className="text-xs text-muted-foreground">
                   Recommended: 16:9 aspect ratio, max 5MB

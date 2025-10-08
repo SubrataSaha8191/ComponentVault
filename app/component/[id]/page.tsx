@@ -42,6 +42,7 @@ interface Component {
   description: string;
   category: string;
   tags: string[];
+  authorId: string;
   accessibilityScore?: number;
   accessibilityBreakdown?: Record<string, number>;
   downloads?: number;
@@ -794,12 +795,13 @@ export function Component(props: ComponentProps) {
               </Tabs>
             </Card>
 
-            {/* Ratings & Reviews Section */}
-            <Card className="border-white/10 bg-white/5 backdrop-blur-sm p-6">
-              <div className="flex items-center gap-2 mb-6">
-                <Star className="w-5 h-5 text-yellow-400" />
-                <h3 className="text-lg font-semibold text-white">Ratings & Reviews</h3>
-              </div>
+            {/* Ratings & Reviews Section - Only show if not the owner */}
+            {componentData && user && componentData.authorId !== user.uid && (
+              <Card className="border-white/10 bg-white/5 backdrop-blur-sm p-6">
+                <div className="flex items-center gap-2 mb-6">
+                  <Star className="w-5 h-5 text-yellow-400" />
+                  <h3 className="text-lg font-semibold text-white">Ratings & Reviews</h3>
+                </div>
 
               {/* Rating Overview */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8 pb-8 border-b border-white/10">
@@ -1029,6 +1031,7 @@ export function Component(props: ComponentProps) {
                 </div>
               </div>
             </Card>
+            )}
 
             {/* Comments Section */}
             <Card className="border-white/10 bg-white/5 backdrop-blur-sm p-6">

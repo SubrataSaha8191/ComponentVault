@@ -21,7 +21,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Skeleton } from "@/components/ui/skeleton"
 import ClientOnly from "@/components/client-only"
-import { FolderOpen, Plus, Search, Lock, Globe, Heart, Eye, Layers, TrendingUp, Clock } from "lucide-react"
+import { FolderOpen, Plus, Search, Lock, Globe, Heart, Eye, Layers, TrendingUp, Clock, Upload } from "lucide-react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { useAuth } from "@/contexts/auth-context"
@@ -325,12 +325,21 @@ export default function CollectionsPage() {
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="thumbnail">Collection Thumbnail (Optional)</Label>
-                      <Input
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={() => document.getElementById('thumbnail')?.click()}
+                        className="w-full justify-start"
+                      >
+                        <Upload className="h-4 w-4 mr-2" />
+                        {thumbnailPreview ? 'Change File' : 'Choose File'}
+                      </Button>
+                      <input
                         id="thumbnail"
                         type="file"
                         accept="image/*"
                         onChange={handleThumbnailChange}
-                        className="cursor-pointer"
+                        className="hidden"
                       />
                       {thumbnailPreview && (
                         <div className="relative mt-2 aspect-video overflow-hidden rounded-lg border">

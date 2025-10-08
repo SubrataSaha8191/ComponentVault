@@ -1131,7 +1131,6 @@ function SubmissionForm({ onSuccess }: { onSuccess: () => void }) {
     code: "",
     componentImage: null as File | null,
     githubUrl: "",
-    screenshot: null as File | null,
     thumbnail: null as File | null,
   })
 
@@ -1156,7 +1155,6 @@ function SubmissionForm({ onSuccess }: { onSuccess: () => void }) {
     
     // Step 3 fields (Images - at least one required)
     if (formData.componentImage) filledFields++
-    if (formData.screenshot) filledFields++
     if (formData.thumbnail) filledFields++
     
     // Minimum progress should be 0%, maximum 100%
@@ -1248,19 +1246,7 @@ function SubmissionForm({ onSuccess }: { onSuccess: () => void }) {
         }
       }
 
-      if (formData.screenshot) {
-        try {
-          console.log('Uploading screenshot...')
-          const screenshotResult = await uploadComponentImages(formData.screenshot, 'screenshots') as UploadResult
-          screenshotUrl = screenshotResult.downloadURL
-          storageMethodsUsed.push(`Screenshot: ${screenshotResult.storageMethod}`)
-          console.log('Screenshot uploaded successfully:', screenshotUrl)
-        } catch (error: any) {
-          console.error('Error uploading screenshot:', error)
-          uploadErrors.push(`Screenshot: ${error.message}`)
-          toast.error(`Screenshot upload failed: ${error.message}`)
-        }
-      }
+      
 
       if (formData.componentImage) {
         try {
@@ -1600,24 +1586,27 @@ function SubmissionForm({ onSuccess }: { onSuccess: () => void }) {
           <div className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="thumbnail">Thumbnail Image</Label>
-              <Input
-                id="thumbnail"
-                type="file"
-                accept="image/*"
-                onChange={(e) => setFormData({ ...formData, thumbnail: e.target.files?.[0] || null })}
-              />
+              <div className="flex items-center gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => document.getElementById('thumbnail')?.click()}
+                  className="w-full justify-start"
+                >
+                  <Upload className="h-4 w-4 mr-2" />
+                  {formData.thumbnail ? formData.thumbnail.name : 'Choose File'}
+                </Button>
+                <input
+                  id="thumbnail"
+                  type="file"
+                  accept="image/*"
+                  onChange={(e) => setFormData({ ...formData, thumbnail: e.target.files?.[0] || null })}
+                  className="hidden"
+                />
+              </div>
               <p className="text-sm text-muted-foreground">Small preview image for cards and listings (Recommended: 400x300px, max 2MB)</p>
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="screenshot">Screenshot</Label>
-              <Input
-                id="screenshot"
-                type="file"
-                accept="image/*"
-                onChange={(e) => setFormData({ ...formData, screenshot: e.target.files?.[0] || null })}
-              />
-              <p className="text-sm text-muted-foreground">Detailed component preview image for the component page (max 5MB)</p>
-            </div>
+            
           </div>
         )}
 

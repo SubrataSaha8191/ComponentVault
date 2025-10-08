@@ -3,6 +3,8 @@
 import { useState, FormEvent, ChangeEvent } from 'react';
 import { useAuth } from '@/hooks/use-auth';
 import { useRouter } from 'next/navigation';
+import { Button } from '@/components/ui/button';
+import { Upload } from 'lucide-react';
 
 interface ComponentFormData {
   title: string;
@@ -209,17 +211,23 @@ export default function UploadComponentForm() {
           <label htmlFor="previewImage" className="block text-sm font-medium mb-2">
             Preview Image *
           </label>
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => document.getElementById('previewImage')?.click()}
+            className="w-full justify-start"
+          >
+            <Upload className="h-4 w-4 mr-2" />
+            {previewFile ? previewFile.name : 'Choose File'}
+          </Button>
           <input
             type="file"
             id="previewImage"
             accept="image/*"
             onChange={(e) => handleFileChange(e, 'preview')}
             required
-            className="w-full px-4 py-2 border rounded-lg"
+            className="hidden"
           />
-          {previewFile && (
-            <p className="text-sm text-gray-600 mt-2">Selected: {previewFile.name}</p>
-          )}
         </div>
 
         {/* Thumbnail Image (Optional) */}
@@ -227,16 +235,22 @@ export default function UploadComponentForm() {
           <label htmlFor="thumbnailImage" className="block text-sm font-medium mb-2">
             Thumbnail Image (Optional)
           </label>
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => document.getElementById('thumbnailImage')?.click()}
+            className="w-full justify-start"
+          >
+            <Upload className="h-4 w-4 mr-2" />
+            {thumbnailFile ? thumbnailFile.name : 'Choose File'}
+          </Button>
           <input
             type="file"
             id="thumbnailImage"
             accept="image/*"
             onChange={(e) => handleFileChange(e, 'thumbnail')}
-            className="w-full px-4 py-2 border rounded-lg"
+            className="hidden"
           />
-          {thumbnailFile && (
-            <p className="text-sm text-gray-600 mt-2">Selected: {thumbnailFile.name}</p>
-          )}
         </div>
 
         {/* Category */}

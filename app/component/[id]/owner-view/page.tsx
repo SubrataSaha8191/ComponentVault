@@ -86,6 +86,7 @@ export default function ComponentOwnerViewPage() {
   const [isDarkMode, setIsDarkMode] = useState(true)
   const [copiedCode, setCopiedCode] = useState(false)
   const [selectedMediaTab, setSelectedMediaTab] = useState<"thumbnail" | "preview" | "video">("preview")
+  const [selectedCodeTab, setSelectedCodeTab] = useState<"jsx" | "html" | "css" | "typescript">("jsx")
 
   // Fetch component data
   useEffect(() => {
@@ -130,6 +131,20 @@ export default function ComponentOwnerViewPage() {
   // Get the actual component code
   const componentCode = componentData?.code || '// No code available for this component'
 
+  // Generate code examples for different formats
+  const codeExamples = {
+    jsx: componentCode,
+    html: componentCode.includes('<!DOCTYPE') || componentCode.includes('<html') 
+      ? componentCode 
+      : `<!-- HTML version -->\n${componentCode}`,
+    css: componentCode.includes('{') && !componentCode.includes('function')
+      ? componentCode
+      : `/* CSS styles */\n.component {\n  /* Add styles here */\n}`,
+    typescript: componentCode.includes('interface') || componentCode.includes(': React.FC')
+      ? componentCode
+      : componentCode.replace('export function', 'export const').replace(')', '): React.FC =>')
+  }
+
   const previewSizes = {
     desktop: "w-full",
     tablet: "w-[768px] mx-auto",
@@ -137,8 +152,9 @@ export default function ComponentOwnerViewPage() {
   }
 
   const handleCopyCode = () => {
-    if (componentCode) {
-      navigator.clipboard.writeText(componentCode)
+    const code = codeExamples[selectedCodeTab]
+    if (code) {
+      navigator.clipboard.writeText(code)
       setCopiedCode(true)
       toast.success("Code copied to clipboard!")
       setTimeout(() => setCopiedCode(false), 2000)
@@ -146,23 +162,21 @@ export default function ComponentOwnerViewPage() {
   }
 
   const handleDownloadCode = () => {
-    if (!componentCode) return
+    const code = codeExamples[selectedCodeTab]
+    if (!code) return
     
-    // Determine file extension based on code content or default to .jsx
-    let extension = 'jsx'
-    if (componentCode.includes('<!DOCTYPE') || componentCode.includes('<html')) {
-      extension = 'html'
-    } else if (componentCode.includes('@apply') || componentCode.startsWith('.') || componentCode.startsWith('#')) {
-      extension = 'css'
-    } else if (componentCode.includes('interface ') || componentCode.includes(': React.FC')) {
-      extension = 'tsx'
+    const extensions = {
+      jsx: 'jsx',
+      html: 'html',
+      css: 'css',
+      typescript: 'tsx'
     }
     
-    const blob = new Blob([componentCode], { type: "text/plain" })
+    const blob = new Blob([code], { type: "text/plain" })
     const url = URL.createObjectURL(blob)
     const a = document.createElement("a")
     a.href = url
-    a.download = `${componentData?.name || 'component'}.${extension}`
+    a.download = `${componentData?.name || 'component'}.${extensions[selectedCodeTab]}`
     a.click()
     URL.revokeObjectURL(url)
     toast.success("Code downloaded successfully!")
@@ -232,19 +246,28 @@ export default function ComponentOwnerViewPage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-950 via-gray-900 to-gray-950">
       <div className="container mx-auto px-4 py-8">
-        {/* Breadcrumb */}
+        {/* Back Button and Owner Badge */}
         <div className="mb-6 flex items-center justify-between">
-          <div className="flex items-center gap-2 text-sm text-gray-400">
-            <a href="/" className="hover:text-white transition-colors">
-              Home
-            </a>
-            <span>/</span>
-            <a href="/my-components" className="hover:text-white transition-colors">
-              My Components
-            </a>
-            <span>/</span>
-            <span className="text-white">{componentData.name}</span>
-          </div>
+          <Button
+            variant="ghost"
+            onClick={() => router.back()}
+            className="text-gray-400 hover:text-white transition-colors gap-2"
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="20"
+              height="20"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <path d="m15 18-6-6 6-6"/>
+            </svg>
+            Back
+          </Button>
           <Badge className="bg-purple-500/20 text-purple-300 border-purple-500/40">
             Owner View
           </Badge>
@@ -631,15 +654,16 @@ export default function ComponentOwnerViewPage() {
                         </div>
                       )}
                     </div>
-                  ) : componentCode && componentCode.includes('<') ? (
+                  ) : componentCode && (componentCode.includes('<') || componentCode.includes('function') || componentCode.includes('const')) ? (
                     <div className="w-full">
                       <div className="text-xs text-center text-gray-400 mb-4">
-                        Rendered preview (experimental)
+                        Code preview (use preview image for live rendering)
                       </div>
-                      <div 
-                        className="w-full p-4 border border-white/10 rounded-lg"
-                        dangerouslySetInnerHTML={{ __html: componentCode }}
-                      />
+                      <div className="w-full p-4 border border-white/10 rounded-lg bg-gray-900">
+                        <pre className="text-sm text-gray-300 font-mono overflow-auto max-h-[400px]">
+                          <code>{componentCode}</code>
+                        </pre>
+                      </div>
                     </div>
                   ) : (
                     <div className="text-center text-gray-500">
@@ -681,13 +705,46 @@ export default function ComponentOwnerViewPage() {
                 </div>
               </div>
 
-              <div className="relative max-h-[600px] overflow-auto">
-                <pre className="bg-black/30 rounded-lg p-4">
-                  <code className="text-sm text-gray-300 font-mono leading-relaxed whitespace-pre-wrap break-words">
-                    {componentCode}
-                  </code>
-                </pre>
-              </div>
+              <Tabs value={selectedCodeTab} onValueChange={(v) => setSelectedCodeTab(v as any)} className="w-full">
+                <TabsList className="grid w-full grid-cols-4 bg-white/5">
+                  <TabsTrigger
+                    value="jsx"
+                    className="data-[state=active]:bg-blue-500/20 data-[state=active]:text-blue-300"
+                  >
+                    JSX
+                  </TabsTrigger>
+                  <TabsTrigger
+                    value="html"
+                    className="data-[state=active]:bg-blue-500/20 data-[state=active]:text-blue-300"
+                  >
+                    HTML
+                  </TabsTrigger>
+                  <TabsTrigger
+                    value="css"
+                    className="data-[state=active]:bg-blue-500/20 data-[state=active]:text-blue-300"
+                  >
+                    CSS
+                  </TabsTrigger>
+                  <TabsTrigger
+                    value="typescript"
+                    className="data-[state=active]:bg-blue-500/20 data-[state=active]:text-blue-300"
+                  >
+                    TypeScript
+                  </TabsTrigger>
+                </TabsList>
+
+                {Object.entries(codeExamples).map(([key, code]) => (
+                  <TabsContent key={key} value={key} className="mt-4">
+                    <div className="relative max-h-[600px] overflow-auto">
+                      <pre className="bg-black/30 rounded-lg p-4">
+                        <code className="text-sm text-gray-300 font-mono leading-relaxed whitespace-pre-wrap break-words">
+                          {code}
+                        </code>
+                      </pre>
+                    </div>
+                  </TabsContent>
+                ))}
+              </Tabs>
             </Card>
           </div>
         </div>

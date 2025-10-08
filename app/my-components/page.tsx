@@ -51,6 +51,7 @@ export default function MyComponentsPage() {
   const [previewMode, setPreviewMode] = useState<"desktop" | "tablet" | "mobile">("desktop")
   const [isDarkMode, setIsDarkMode] = useState(true)
   const [showCode, setShowCode] = useState(false)
+  const [selectedCodeTab, setSelectedCodeTab] = useState<"jsx" | "html" | "css" | "typescript">("jsx")
 
   // Fetch user's uploaded components and saved components
   useEffect(() => {
@@ -783,31 +784,16 @@ export default function MyComponentsPage() {
                 )}
               >
                 <div className={cn("transition-all duration-300", previewSizes[previewMode])}>
-                  {previewComponent.previewImage ? (
+                  {previewComponent.previewImage || previewComponent.thumbnail ? (
                     <div className="space-y-4">
                       <img
-                        src={previewComponent.previewImage}
+                        src={previewComponent.previewImage || previewComponent.thumbnail || ""}
                         alt={previewComponent.name || "Component preview"}
                         className="w-full h-auto rounded-lg shadow-2xl"
                       />
-                      {previewComponent.code && previewComponent.code.includes('<') && (
-                        <div className="text-xs text-center text-gray-400">
-                          Preview image • Toggle "Code" to see source
-                        </div>
-                      )}
-                    </div>
-                  ) : previewComponent.code && previewComponent.code.includes('<') ? (
-                    <div className="w-full">
-                      <div className="text-xs text-center text-gray-400 mb-4">
-                        Live HTML render (experimental)
+                      <div className="text-xs text-center text-gray-400">
+                        Component preview • Toggle "Code" to see source
                       </div>
-                      <div 
-                        className={cn(
-                          "w-full p-4 border rounded-lg",
-                          isDarkMode ? "border-white/10" : "border-gray-200"
-                        )}
-                        dangerouslySetInnerHTML={{ __html: previewComponent.code }}
-                      />
                     </div>
                   ) : (
                     <div className="text-center text-gray-500">
@@ -819,20 +805,167 @@ export default function MyComponentsPage() {
                 </div>
               </div>
 
-              {/* Code Section */}
+              {/* Code Section with Tabs */}
               {showCode && previewComponent.code && (
                 <div className="space-y-3">
-                  <div className="flex items-center gap-2">
-                    <Code2 className="w-5 h-5 text-blue-400" />
-                    <h3 className="text-lg font-semibold text-white">Source Code</h3>
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <Code2 className="w-5 h-5 text-blue-400" />
+                      <h3 className="text-lg font-semibold text-white">Source Code</h3>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => {
+                          const codeExamples = {
+                            jsx: previewComponent.code,
+                            html: previewComponent.code.includes('<!DOCTYPE') || previewComponent.code.includes('<html') 
+                              ? previewComponent.code 
+                              : `<!-- HTML Version -->\n<!DOCTYPE html>\n<html>\n<head>\n  <style>\n    /* Add your styles */\n  </style>\n</head>\n<body>\n${previewComponent.code}\n</body>\n</html>`,
+                            css: previewComponent.code.includes('{') && previewComponent.code.includes('}') 
+                              ? previewComponent.code 
+                              : `/* CSS Styles */\n.component {\n  /* Extract styles from component */\n}\n\n${previewComponent.code.match(/className="([^"]*)"/g)?.map(m => 
+                                  `.${m.match(/className="([^"]*)"/)?.[1]?.split(' ').join(' .')} { }`
+                                ).join('\n') || ''}`,
+                            typescript: previewComponent.code.includes('interface') || previewComponent.code.includes('type ') 
+                              ? previewComponent.code 
+                              : previewComponent.code
+                                  .replace(/const /g, 'const ')
+                                  .replace(/function /g, 'function ')
+                                  .replace(/=>/g, ': void =>')
+                          };
+                          navigator.clipboard.writeText(codeExamples[selectedCodeTab]);
+                          toast.success(`${selectedCodeTab.toUpperCase()} code copied!`);
+                        }}
+                        className="h-8 gap-2"
+                      >
+                        <Copy className="w-4 h-4" />
+                        Copy
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => {
+                          const extensions = {
+                            jsx: 'jsx',
+                            html: 'html',
+                            css: 'css',
+                            typescript: 'tsx'
+                          };
+                          const codeExamples = {
+                            jsx: previewComponent.code,
+                            html: previewComponent.code.includes('<!DOCTYPE') || previewComponent.code.includes('<html') 
+                              ? previewComponent.code 
+                              : `<!-- HTML Version -->\n<!DOCTYPE html>\n<html>\n<head>\n  <style>\n    /* Add your styles */\n  </style>\n</head>\n<body>\n${previewComponent.code}\n</body>\n</html>`,
+                            css: previewComponent.code.includes('{') && previewComponent.code.includes('}') 
+                              ? previewComponent.code 
+                              : `/* CSS Styles */\n.component {\n  /* Extract styles from component */\n}\n\n${previewComponent.code.match(/className="([^"]*)"/g)?.map(m => 
+                                  `.${m.match(/className="([^"]*)"/)?.[1]?.split(' ').join(' .')} { }`
+                                ).join('\n') || ''}`,
+                            typescript: previewComponent.code.includes('interface') || previewComponent.code.includes('type ') 
+                              ? previewComponent.code 
+                              : previewComponent.code
+                                  .replace(/const /g, 'const ')
+                                  .replace(/function /g, 'function ')
+                                  .replace(/=>/g, ': void =>')
+                          };
+                          const blob = new Blob([codeExamples[selectedCodeTab]], { type: 'text/plain' });
+                          const url = URL.createObjectURL(blob);
+                          const a = document.createElement('a');
+                          a.href = url;
+                          a.download = `${previewComponent.name || 'component'}.${extensions[selectedCodeTab]}`;
+                          a.click();
+                          URL.revokeObjectURL(url);
+                          toast.success('Code downloaded!');
+                        }}
+                        className="h-8 gap-2"
+                      >
+                        <Download className="w-4 h-4" />
+                        Download
+                      </Button>
+                    </div>
                   </div>
-                  <div className="relative max-h-[400px] overflow-auto">
-                    <pre className="bg-black/30 rounded-lg p-4 border border-white/10">
-                      <code className="text-sm text-gray-300 font-mono leading-relaxed whitespace-pre-wrap break-words">
-                        {previewComponent.code}
-                      </code>
-                    </pre>
-                  </div>
+                  
+                  <Tabs value={selectedCodeTab} onValueChange={(v) => setSelectedCodeTab(v as any)} className="w-full">
+                    <TabsList className="grid w-full grid-cols-4 bg-white/5">
+                      <TabsTrigger
+                        value="jsx"
+                        className="data-[state=active]:bg-blue-500/20 data-[state=active]:text-blue-300"
+                      >
+                        JSX
+                      </TabsTrigger>
+                      <TabsTrigger
+                        value="html"
+                        className="data-[state=active]:bg-blue-500/20 data-[state=active]:text-blue-300"
+                      >
+                        HTML
+                      </TabsTrigger>
+                      <TabsTrigger
+                        value="css"
+                        className="data-[state=active]:bg-blue-500/20 data-[state=active]:text-blue-300"
+                      >
+                        CSS
+                      </TabsTrigger>
+                      <TabsTrigger
+                        value="typescript"
+                        className="data-[state=active]:bg-blue-500/20 data-[state=active]:text-blue-300"
+                      >
+                        TypeScript
+                      </TabsTrigger>
+                    </TabsList>
+
+                    <TabsContent value="jsx" className="mt-4">
+                      <div className="relative max-h-[400px] overflow-auto">
+                        <pre className="bg-black/30 rounded-lg p-4 border border-white/10">
+                          <code className="text-sm text-gray-300 font-mono leading-relaxed whitespace-pre-wrap break-words">
+                            {previewComponent.code}
+                          </code>
+                        </pre>
+                      </div>
+                    </TabsContent>
+
+                    <TabsContent value="html" className="mt-4">
+                      <div className="relative max-h-[400px] overflow-auto">
+                        <pre className="bg-black/30 rounded-lg p-4 border border-white/10">
+                          <code className="text-sm text-gray-300 font-mono leading-relaxed whitespace-pre-wrap break-words">
+                            {previewComponent.code.includes('<!DOCTYPE') || previewComponent.code.includes('<html') 
+                              ? previewComponent.code 
+                              : `<!-- HTML Version -->\n<!DOCTYPE html>\n<html>\n<head>\n  <style>\n    /* Add your styles */\n  </style>\n</head>\n<body>\n${previewComponent.code}\n</body>\n</html>`}
+                          </code>
+                        </pre>
+                      </div>
+                    </TabsContent>
+
+                    <TabsContent value="css" className="mt-4">
+                      <div className="relative max-h-[400px] overflow-auto">
+                        <pre className="bg-black/30 rounded-lg p-4 border border-white/10">
+                          <code className="text-sm text-gray-300 font-mono leading-relaxed whitespace-pre-wrap break-words">
+                            {previewComponent.code.includes('{') && previewComponent.code.includes('}') 
+                              ? previewComponent.code 
+                              : `/* CSS Styles */\n.component {\n  /* Extract styles from component */\n}\n\n${previewComponent.code.match(/className="([^"]*)"/g)?.map(m => 
+                                  `.${m.match(/className="([^"]*)"/)?.[1]?.split(' ').join(' .')} { }`
+                                ).join('\n') || ''}`}
+                          </code>
+                        </pre>
+                      </div>
+                    </TabsContent>
+
+                    <TabsContent value="typescript" className="mt-4">
+                      <div className="relative max-h-[400px] overflow-auto">
+                        <pre className="bg-black/30 rounded-lg p-4 border border-white/10">
+                          <code className="text-sm text-gray-300 font-mono leading-relaxed whitespace-pre-wrap break-words">
+                            {previewComponent.code.includes('interface') || previewComponent.code.includes('type ') 
+                              ? previewComponent.code 
+                              : previewComponent.code
+                                  .replace(/const /g, 'const ')
+                                  .replace(/function /g, 'function ')
+                                  .replace(/=>/g, ': void =>')}
+                          </code>
+                        </pre>
+                      </div>
+                    </TabsContent>
+                  </Tabs>
                 </div>
               )}
 

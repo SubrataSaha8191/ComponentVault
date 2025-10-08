@@ -44,6 +44,7 @@ import {
   Search,
   X,
   FolderOpen,
+  Upload,
 } from "lucide-react"
 import Link from "next/link"
 import { useParams, useRouter } from "next/navigation"
@@ -685,7 +686,22 @@ export default function CollectionDetailPage() {
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="edit-cover">Thumbnail (optional)</Label>
-                  <Input id="edit-cover" type="file" accept="image/*" onChange={handleCoverChange} />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => document.getElementById('edit-cover')?.click()}
+                    className="w-full justify-start"
+                  >
+                    <Upload className="h-4 w-4 mr-2" />
+                    {coverPreview ? 'Change File' : 'Choose File'}
+                  </Button>
+                  <input
+                    id="edit-cover"
+                    type="file"
+                    accept="image/*"
+                    onChange={handleCoverChange}
+                    className="hidden"
+                  />
                   <div className="flex items-center gap-3">
                     {(coverPreview || collection.coverImage) && (
                       <img
