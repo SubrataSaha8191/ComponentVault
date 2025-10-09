@@ -8,6 +8,7 @@ import { Suspense } from "react"
 import { ThemeProvider } from "@/components/theme-provider"
 import { AuthProvider } from "@/contexts/auth-context"
 import { Header } from "@/components/header"
+import { AlertProvider } from "@/components/alert-provider"
 import "./globals.css"
 
 const inter = Inter({
@@ -45,6 +46,7 @@ export default function RootLayout({
               <Header />
               {children}
               <Analytics />
+              <AlertProvider />
             </Suspense>
           </AuthProvider>
         </ThemeProvider>

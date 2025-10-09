@@ -29,10 +29,12 @@ import { useAllCollections } from "@/hooks/use-collections"
 import { useStats } from "@/hooks/use-stats"
 import { Collection } from "@/lib/firebase/types"
 import { toast } from "sonner"
+import { useAlert } from "@/hooks/use-alert"
 
 export default function CollectionsPage() {
   const { user } = useAuth()
   const router = useRouter()
+  const alert = useAlert()
   const [searchQuery, setSearchQuery] = useState("")
   const [sortBy, setSortBy] = useState("popular")
   const [activeTab, setActiveTab] = useState("all")
@@ -135,11 +137,11 @@ export default function CollectionsPage() {
     const file = e.target.files?.[0]
     if (file) {
       if (!file.type.startsWith('image/')) {
-        alert('Please select an image file')
+        alert.showWarning('Invalid File Type', 'Please select an image file (JPG, PNG, GIF, etc.)')
         return
       }
       if (file.size > 5 * 1024 * 1024) {
-        alert('Image size should be less than 5MB')
+        alert.showWarning('File Too Large', 'Image size should be less than 5MB. Please choose a smaller file.')
         return
       }
       setThumbnailFile(file)

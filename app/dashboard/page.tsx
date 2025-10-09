@@ -84,6 +84,7 @@ import debugFirebase from "@/lib/firebase/debug"
 import Link from "next/link"
 import { toast } from "sonner"
 import ClientOnly from "@/components/client-only"
+import { useAlert } from "@/hooks/use-alert"
 
 // Define Activity interface locally since it's causing import conflicts
 interface Activity {
@@ -917,21 +918,28 @@ function DashboardContent() {
 // Component Card Component
 function ComponentCard({ component, onUpdate }: { component: Component; onUpdate: () => void }) {
   const [isDeleting, setIsDeleting] = useState(false)
+  const alert = useAlert()
 
   const handleDelete = async () => {
-    if (!confirm('Are you sure you want to delete this component?')) return
-    
-    try {
-      setIsDeleting(true)
-      await deleteComponent(component.id)
-      toast.success('Component deleted successfully')
-      onUpdate()
-    } catch (error) {
-      console.error('Error deleting component:', error)
-      toast.error('Failed to delete component')
-    } finally {
-      setIsDeleting(false)
-    }
+    alert.showConfirm(
+      'Delete Component?',
+      'Are you sure you want to delete this component? This action cannot be undone.',
+      async () => {
+        try {
+          setIsDeleting(true)
+          await deleteComponent(component.id)
+          toast.success('Component deleted successfully')
+          onUpdate()
+        } catch (error) {
+          console.error('Error deleting component:', error)
+          toast.error('Failed to delete component')
+        } finally {
+          setIsDeleting(false)
+        }
+      },
+      undefined,
+      'delete'
+    )
   }
 
   const getStatusColor = (isPublished: boolean) => {

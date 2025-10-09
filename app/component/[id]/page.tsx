@@ -4,6 +4,7 @@ import { useState, useEffect } from "react"
 import { useParams } from "next/navigation"
 import { useAuth } from "@/contexts/auth-context"
 import { toast } from "sonner"
+import { useAlert } from "@/hooks/use-alert"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -93,6 +94,7 @@ interface ReviewsData {
 export default function ComponentDetailPage() {
   const params = useParams()
   const { user } = useAuth()
+  const alert = useAlert()
   const componentId = params.id as string
 
   // Loading states
@@ -245,7 +247,7 @@ export function Component(props: ComponentProps) {
   const handleShare = () => {
     const url = window.location.href
     navigator.clipboard.writeText(url)
-    alert("Link copied to clipboard!")
+    alert.showSuccess('Link Copied!', 'The component link has been copied to your clipboard')
   }
 
   const handleSubmitReview = async () => {

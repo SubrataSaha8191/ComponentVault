@@ -4,6 +4,7 @@ import { useState, useEffect } from "react"
 import { useParams, useRouter } from "next/navigation"
 import { useAuth } from "@/contexts/auth-context"
 import { toast } from "sonner"
+import { useAlert } from "@/hooks/use-alert"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -72,6 +73,7 @@ export default function ComponentOwnerViewPage() {
   const params = useParams()
   const router = useRouter()
   const { user } = useAuth()
+  const alert = useAlert()
   const componentId = params.id as string
 
   // Loading states
@@ -206,29 +208,33 @@ export default function ComponentOwnerViewPage() {
   }
 
   const handleDelete = async () => {
-    if (!confirm("Are you sure you want to delete this component? This action cannot be undone.")) {
-      return
-    }
+    alert.showConfirm(
+      'Delete Component?',
+      'Are you sure you want to delete this component? This action cannot be undone and all associated data will be permanently removed.',
+      async () => {
+        try {
+          const idToken = await user?.getIdToken()
+          const response = await fetch(`/api/components/${componentId}?authorId=${componentData?.authorId}&previewUrl=${componentData?.previewImage}&thumbnailUrl=${componentData?.thumbnail}`, {
+            method: 'DELETE',
+            headers: {
+              'Authorization': `Bearer ${idToken}`,
+            },
+          })
 
-    try {
-      const idToken = await user?.getIdToken()
-      const response = await fetch(`/api/components/${componentId}?authorId=${componentData?.authorId}&previewUrl=${componentData?.previewImage}&thumbnailUrl=${componentData?.thumbnail}`, {
-        method: 'DELETE',
-        headers: {
-          'Authorization': `Bearer ${idToken}`,
-        },
-      })
+          if (!response.ok) {
+            throw new Error('Failed to delete component')
+          }
 
-      if (!response.ok) {
-        throw new Error('Failed to delete component')
-      }
-
-      toast.success("Component deleted successfully!")
-      router.push('/my-components')
-    } catch (error) {
-      console.error('Error deleting component:', error)
-      toast.error('Failed to delete component')
-    }
+          toast.success("Component deleted successfully!")
+          router.push('/my-components')
+        } catch (error) {
+          console.error('Error deleting component:', error)
+          toast.error('Failed to delete component')
+        }
+      },
+      undefined,
+      'delete'
+    )
   }
 
   // Loading state

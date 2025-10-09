@@ -50,11 +50,13 @@ import Link from "next/link"
 import { useParams, useRouter } from "next/navigation"
 import { useAuth } from "@/contexts/auth-context"
 import { Collection, Component } from "@/lib/firebase/types"
+import { useAlert } from "@/hooks/use-alert"
 
 export default function CollectionDetailPage() {
   const params = useParams()
   const router = useRouter()
   const { user } = useAuth()
+  const alert = useAlert()
   const collectionId = params.id as string
 
   const [collection, setCollection] = useState<Collection | null>(null)
@@ -167,7 +169,7 @@ export default function CollectionDetailPage() {
       return
     }
     if (!file.type.startsWith('image/')) {
-      alert('Please select a valid image file')
+      alert.showWarning('Invalid File Type', 'Please select a valid image file (JPG, PNG, GIF, etc.)')
       return
     }
     // Preview
@@ -266,38 +268,45 @@ export default function CollectionDetailPage() {
       } else {
         const errorData = await response.json()
         console.error('Failed to add components:', errorData)
-        alert(`Failed to add components: ${errorData.error || 'Unknown error'}`)
+        alert.showError('Failed to Add Components', errorData.error || 'An unknown error occurred while adding components')
       }
     } catch (error) {
       console.error('Error adding components:', error)
-      alert('Error adding components')
+      alert.showError('Error', 'Failed to add components to collection')
     }
   }
 
   const handleRemoveComponent = async (componentId: string) => {
     if (!user || !collection) return
-    if (!confirm('Remove this component from the collection?')) return
+    
+    alert.showConfirm(
+      'Remove Component?',
+      'Are you sure you want to remove this component from the collection?',
+      async () => {
+        try {
+          const idToken = await user.getIdToken()
+          const response = await fetch(`/api/collections/${collectionId}/components`, {
+            method: 'DELETE',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${idToken}`,
+            },
+            body: JSON.stringify({ componentId }),
+          })
 
-    try {
-      const idToken = await user.getIdToken()
-      const response = await fetch(`/api/collections/${collectionId}/components`, {
-        method: 'DELETE',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${idToken}`,
-        },
-        body: JSON.stringify({ componentId }),
-      })
-
-      if (response.ok) {
-        setComponents(components.filter(c => c.id !== componentId))
-      } else {
-        alert('Failed to remove component')
-      }
-    } catch (error) {
-      console.error('Error removing component:', error)
-      alert('Error removing component')
-    }
+          if (response.ok) {
+            setComponents(components.filter(c => c.id !== componentId))
+          } else {
+            alert.showError('Failed to Remove', 'Could not remove component from collection')
+          }
+        } catch (error) {
+          console.error('Error removing component:', error)
+          alert.showError('Error', 'An error occurred while removing the component')
+        }
+      },
+      undefined,
+      'warning'
+    )
   }
 
   const handleUpdateCollection = async (event: React.FormEvent<HTMLFormElement>) => {
@@ -353,11 +362,11 @@ export default function CollectionDetailPage() {
         setCoverFile(null)
         setCoverPreview(null)
       } else {
-        alert('Failed to update collection')
+        alert.showError('Update Failed', 'Could not update collection details')
       }
     } catch (error) {
       console.error('Error updating collection:', error)
-      alert('Error updating collection')
+      alert.showError('Error', 'An error occurred while updating the collection')
     }
   }
 
@@ -374,11 +383,11 @@ export default function CollectionDetailPage() {
       if (response.ok) {
         router.push('/collections')
       } else {
-        alert('Failed to delete collection')
+        alert.showError('Delete Failed', 'Could not delete the collection')
       }
     } catch (error) {
       console.error('Error deleting collection:', error)
-      alert('Error deleting collection')
+      alert.showError('Error', 'An error occurred while deleting the collection')
     }
   }
 

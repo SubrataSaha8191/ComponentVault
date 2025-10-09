@@ -5,6 +5,7 @@ import { useAuth } from '@/hooks/use-auth';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Upload } from 'lucide-react';
+import { useAlert } from '@/hooks/use-alert';
 
 interface ComponentFormData {
   title: string;
