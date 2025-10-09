@@ -23,6 +23,7 @@ Built using Next.js, Firebase Firestore, and IMGBB, it offers a seamless experie
 
 🧭 Search & Filter — find components easily across categories.
 
+
 🏗️ Tech Stack
 
 Layer	Technology
@@ -79,7 +80,6 @@ Run the app
 npm run dev
 
 
-App runs on http://localhost:3000
 
 🛠️ Future Enhancements
 
