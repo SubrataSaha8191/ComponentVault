@@ -23,18 +23,28 @@ Built using Next.js, Firebase Firestore, and IMGBB, it offers a seamless experie
 
 🧭 Search & Filter — find components easily across categories.
 
+
+
 🏗️ Tech Stack
+
 Layer	Technology
-Frontend	Next.js 14 (App Router), React, TailwindCSS, ShadCN-UI
-Backend	Firebase Firestore, Firebase Authentication
-Storage	Firebase Storage (or alternative cloud storage)
-Deployment	Vercel / Firebase Hosting
-Language	TypeScript / JavaScript
+
+Frontend:	Next.js 14 (App Router), React, TailwindCSS, ShadCN-UI
+
+Backend:	Firebase Firestore, Firebase Authentication
+
+Storage:	IMGBB Api (or alternative cloud storage)
+
+Deployment:	Vercel / Firebase Hosting
+
+Language:	TypeScript / JavaScript
+
 ⚙️ Setup & Installation
 
 Clone the repository
 
 git clone https://github.com/<your-username>/componentvault.git
+
 cd componentvault
 
 
@@ -54,10 +64,15 @@ Enable Authentication and Firestore Database
 Copy your Firebase config and create a .env.local file:
 
 NEXT_PUBLIC_FIREBASE_API_KEY=your_api_key
+
 NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=your_auth_domain
+
 NEXT_PUBLIC_FIREBASE_PROJECT_ID=your_project_id
+
 NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=your_storage_bucket
+
 NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=your_sender_id
+
 NEXT_PUBLIC_FIREBASE_APP_ID=your_app_id
 
 
@@ -66,7 +81,6 @@ Run the app
 npm run dev
 
 
-App runs on http://localhost:3000
 
 🛠️ Future Enhancements
 
